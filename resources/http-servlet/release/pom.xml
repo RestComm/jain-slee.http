@@ -28,7 +28,7 @@
 								<configuration>
 									<tasks>
 										<echo>HTTP Servlet release</echo>
-										<copy overwrite="true" todir="${basedir}/../../../release/${release.name}/resources/http-servlet">
+										<copy overwrite="true" todir="${release.dir}/resources/http-servlet">
 											<fileset dir="${basedir}/../du/target">
 												<include name="**.jar" />
 												<include name="*.xml" />
@@ -43,8 +43,8 @@
 												<include name="*.jar" />
 											</fileset>
 										</copy>
-										<copy overwrite="true" file="${basedir}/../du/target/build.xml" tofile="${basedir}/../../../release/${release.name}/resources/http-servlet/du-management.xml" />
-										<copy overwrite="true" file="${basedir}/build.xml" todir="${basedir}/../../../release/${release.name}/resources/http-servlet">
+										<copy overwrite="true" file="${basedir}/../du/target/build.xml" tofile="${release.dir}/resources/http-servlet/du-management.xml" />
+										<copy overwrite="true" file="${basedir}/build.xml" todir="${release.dir}/resources/http-servlet">
 											<filterset>
 												<filter token="JBOSS.PATH" value="${jboss.path}" />
 												<filter token="JBOSS.CONFIG" value="${node}" />

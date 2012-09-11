@@ -1,3 +1,12 @@
+# SLEE
+
+enablers/rest-client/docs/sources-mobicents/src/
+enablers/rest-client/docs/sources-telscale/src/
+resources/http-client/docs/sources-mobicents/src/
+resources/http-client/docs/sources-telscale/src/
+resources/http-servlet/docs/sources-mobicents/src/
+resources/http-servlet/docs/sources-telscale/src/
+
 # Java compiled #
 #################
 *.class

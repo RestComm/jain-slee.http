@@ -19,22 +19,17 @@
 		<module>du</module>
 	</modules>
 
-	<properties>
-		<mobicents.resources.http.version>${project.version}</mobicents.resources.http.version>
-		<mobicents.resources.xtension.version>${project.version}</mobicents.resources.xtension.version>
-	</properties>
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.mobicents.resources</groupId>
 				<artifactId>http-client-ratype</artifactId>
-				<version>${mobicents.resources.http.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.mobicents.servers.jainslee.api</groupId>
 				<artifactId>jain-slee-11-ext</artifactId>
-				<version>${mobicents.resources.xtension.version}</version>
+				<version>${project.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>oauth.signpost</groupId>

@@ -23,7 +23,6 @@
 	</modules>
 	
 	<properties>
-		<docs.profile>mobicents</docs.profile>
 		<docs.ra.name>HTTP Client</docs.ra.name>
 		<docs.ra.dirname>http-client</docs.ra.dirname>
 		<docs.bookid>HttpClient</docs.bookid>

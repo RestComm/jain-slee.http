@@ -29,7 +29,7 @@
 			<dependency>
 				<groupId>org.mobicents.servers.jainslee.api</groupId>
 				<artifactId>jain-slee-11-ext</artifactId>
-				<version>${project.version}</version>
+				<version>6.1.1.GA-TelScale</version>
 			</dependency>
 			<dependency>
 				<groupId>oauth.signpost</groupId>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "../User_Guide.ent">
+%BOOK_ENTITIES;
+]>
+
+<chapter id="ratype">
+
+	<title>Resource Adaptor Type</title>
+
+	<para>The Resource Adaptor Type is the interface which defines the contract between the RA implementations, the SLEE container, and the Applications running in it.</para>
+	
+	<para>The name of the RA Type is <literal>HttpClientResourceAdaptorType</literal>, its vendor is <literal>org.mobicents</literal> and its version is <literal>4.0</literal>.</para>
+
+<section>
+<title> Resource Adaptor Type</title>
+ 
+
+
+	<programlisting language="Java" role="JAVA">
+		<![CDATA[
+ 
+
+
+
+package org.mobicents.slee.ra.httpclient.ratype;
+
+import javax.slee.resource.ResourceAdaptorTypeID;
+ 
+public interface HttpClientResourceAdaptorType {
+
+	ResourceAdaptorTypeID ID = new ResourceAdaptorTypeID("HttpClient",
+			"org.mobicents", "5.0");
+}
+
+]]>
+     </programlisting>
+
+
+
+</section>
+
+
+
+<section>
+<title> Http Client Request Activity</title>
+<para>
+This activity is of <literal>org.mobicents.slee.ra.httpclient.ratype.HttpClientRequestActivity </literal> interface. This interface will attempt to cancel the execution of a request. It will fail if the request is already completed or if the request cannot be cancelled for any other reasons. 
+</para>
+
+	<programlisting language="Java" role="JAVA">
+		<![CDATA[
+
+package org.mobicents.slee.ra.httpclient.ratype;
+
+public interface HttpClientRequestActivity {
+
+	 
+	boolean cancel(boolean mayInterruptIfRunning);
+
+	 
+	boolean isCancelled();
+
+	 
+	boolean isDone();
+
+}
+
+]]>
+     </programlisting>
+
+<variablelist>
+
+ <varlistentry>
+ <term>
+ The <literal>boolean cancel()</literal>
+ method:
+ </term>
+ <listitem>
+<para>
+This method takes a single parameter, "mayInterruptIfRunning". It states if the execution of a request may be interrupted. On the contrary, the request will be allowed to complete. The method will return false if the request could not be cancelled because it has already been completed.  
+</para>
+ </listitem>
+ </varlistentry>
+
+ <varlistentry>
+ <term>
+ The <literal>boolean isCancelled()</literal>
+ method:
+ </term>
+ <listitem>
+ <para>
+ This method will return true if the request was already cancelled before it was completed. 
+ </para>
+ </listitem>
+ </varlistentry>
+		 
+
+ <varlistentry>
+ <term>
+ The second<literal>boolean isDone()</literal>
+ method:
+ </term>
+ <listitem>
+<para>
+This method returns true if the request is already completed. The completion may be due to an exception, cancellation or normal end of process execution. 
+</para>
+ 
+ </listitem>
+ </varlistentry>
+
+
+ </variablelist>
+
+
+
+</section>
+		
+	<!-- 
+	<xi:include
+		xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="Section-Activities.xml" />
+	-->
+	<xi:include
+		xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="Section-Events.xml" />
+	
+	<xi:include
+		xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="Section-Activity_Context_Interface_Factory.xml" />
+	
+	<xi:include
+		xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="Section-Resource_Adaptor_Interface.xml" />
+	
+	<xi:include
+		xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="Section-Restrictions.xml" />
+	
+	<xi:include
+		xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="Section-Sbb_Code_Examples.xml" />
+					
+</chapter>

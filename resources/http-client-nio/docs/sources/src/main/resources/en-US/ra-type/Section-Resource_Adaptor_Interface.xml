@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "../User_Guide.ent">
+%BOOK_ENTITIES;
+]>
+
+<section id="ratype_ra_interface">
+
+	<title>Resource Adaptor Interface</title>
+
+	<para>The &THIS.RA; Resource Adaptor interface, of type <literal>org.mobicents.slee.ra.httpclient.ratype.HttpClientResourceAdaptorSbbInterface</literal>, which an SBB uses to create new <literal>HttpClientActivity</literal> instances or get access the managed HTTP Client, to send synchronous requests or change its parameters, its interface is defined as follows:</para>
+	
+	<programlisting language="Java" role="JAVA">
+		<![CDATA[
+
+
+package org.mobicents.slee.ra.httpclient.ratype;
+
+import javax.slee.SLEEException;
+import javax.slee.TransactionRequiredLocalException;
+import javax.slee.resource.ActivityAlreadyExistsException;
+import javax.slee.resource.StartActivityException;
+
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
+
+ 
+public interface HttpClientResourceAdaptorSbbInterface {
+
+ 
+	HttpParams getHttpClientParams();
+
+ 
+	HttpClientRequestActivity execute(HttpUriRequest request,
+			HttpContext context, Object applicationData) throws TransactionRequiredLocalException, ActivityAlreadyExistsException, NullPointerException, IllegalStateException, SLEEException, StartActivityException;
+ 
+	HttpClientRequestActivity execute(HttpHost target, HttpRequest request,
+			HttpContext context, Object applicationData) throws TransactionRequiredLocalException, ActivityAlreadyExistsException, NullPointerException, IllegalStateException, SLEEException, StartActivityException;
+
+}
+
+
+
+
+
+ ]]>
+    </programlisting>
+
+ <variablelist>
+
+ <varlistentry>
+ <term>
+ The <literal>HttpParams getHttpClientParams()</literal>
+ method:
+ </term>
+ <listitem>
+ <para>
+ Retrieves the params from the client managed by the RA</para>
+ </listitem>
+ </varlistentry>
+
+ <varlistentry>
+ <term>
+ The <literal>HttpClientRequestActivity execute()</literal>
+ method:
+ </term>
+ <listitem>
+ <para>
+The first parameter "request" is the request to execute. The "context" parameter
+is optional and is used on the request execution. The "applicationData" parameter is optional and it is a data object provided by the application to be returned in the response event.
+ </para>
+ </listitem>
+ </varlistentry>
+		 
+
+ <varlistentry>
+ <term>
+ The second<literal>HttpClientRequestActivity execute ()</literal>
+ method:
+ </term>
+ <listitem>
+ <para>
+The first parameter "target" is for the target host during a request. The implementation may accept <code>null </code> if the route can still be determined. This can be in the context of a default target or by inspecting the request.
+</para>
+<para>
+The "request" parameter specifies the request to execute.
+</para>
+<para>
+ The "context" parameter
+is optional and is used on the request execution. The "applicationData" parameter is optional and it is a data object provided by the application to be returned in the response event.
+ </para>
+ </listitem>
+ </varlistentry>
+
+
+ </variablelist>
+	
+</section>

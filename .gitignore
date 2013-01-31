@@ -23,3 +23,11 @@ target
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# SLEE
+${env.JBOSS_HOME}
+${release.dir}
+enablers/rest-client/docs/sources-mobicents/src/
+resources/http-client-nio/docs/sources-mobicents/src/
+resources/http-client/docs/sources-mobicents/src/
+resources/http-servlet/docs/sources-mobicents/src/

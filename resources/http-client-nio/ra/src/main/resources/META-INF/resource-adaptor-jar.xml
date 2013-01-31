@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 <!DOCTYPE resource-adaptor-jar PUBLIC "-//Sun Microsystems, Inc.//DTD JAIN SLEE Resource Adaptor 1.1//EN" "http://java.sun.com/dtd/slee-resource-adaptor-jar_1_1.dtd">
 <resource-adaptor-jar>
-	<resource-adaptor id="http-client-ra_5.0">
-		<resource-adaptor-name>HttpClientResourceAdaptor</resource-adaptor-name>
+	<resource-adaptor id="http-client-nio-ra_1.0">
+		<resource-adaptor-name>HttpClientNIO</resource-adaptor-name>
 		<resource-adaptor-vendor>org.mobicents</resource-adaptor-vendor>
-		<resource-adaptor-version>5.0</resource-adaptor-version>
+		<resource-adaptor-version>1.0</resource-adaptor-version>
 		<resource-adaptor-type-ref>
-			<resource-adaptor-type-name>HttpClientResourceAdaptorType</resource-adaptor-type-name>
+			<resource-adaptor-type-name>HttpClientNIO</resource-adaptor-type-name>
 			<resource-adaptor-type-vendor>org.mobicents</resource-adaptor-type-vendor>
-			<resource-adaptor-type-version>5.0</resource-adaptor-type-version>
+			<resource-adaptor-type-version>1.0</resource-adaptor-type-version>
 		</resource-adaptor-type-ref>
 		<resource-adaptor-classes>
 			<resource-adaptor-class>
 				<resource-adaptor-class-name>
-					org.mobicents.slee.ra.httpclient.ra.HttpClientResourceAdaptor
+					org.mobicents.slee.ra.httpclient.nio.ra.HttpClientNIOResourceAdaptor
 				</resource-adaptor-class-name>
 			</resource-adaptor-class>
 		</resource-adaptor-classes>
 		<config-property>
 			<description>May be used to provide a class which is responsible for
-				building the HTTP Client. If used the other properties are
-				irrelevant.</description>
+				building the HTTP Client.</description>
 			<config-property-name>HTTP_CLIENT_FACTORY</config-property-name>
 			<config-property-type>java.lang.String</config-property-type>
 			<config-property-value></config-property-value>

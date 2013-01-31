@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "../User_Guide.ent">
+%BOOK_ENTITIES;
+]>
+
+<section id="ratype_ra_interface">
+
+	<title>Resource Adaptor Interface</title>
+
+	<para>The &THIS.RA; Resource Adaptor interface, of type <literal>org.mobicents.slee.ra. httpclient.nio.ratype. HttpClientNIOResourceAdaptorSbbInterface</literal>, which a SBB uses to executes new HTTP client requests, or to retrieve the http params used by managed HTTP Client, has its interface is defined as follows:</para>
+	
+	<programlisting language="Java" role="JAVA">
+		<![CDATA[
+package org.mobicents.slee.ra.httpclient.nio.ratype;
+
+public interface HttpClientNIOResourceAdaptorSbbInterface {
+
+	HttpParams getHttpClientParams();
+
+	HttpClientNIORequestActivity execute(HttpUriRequest request,
+			HttpContext context, Object applicationData) 
+			throws TransactionRequiredLocalException, 
+			ActivityAlreadyExistsException, NullPointerException,
+			IllegalStateException, SLEEException, StartActivityException;
+
+	HttpClientNIORequestActivity execute(HttpHost target, 
+		HttpRequest request, HttpContext context, Object applicationData)
+		throws TransactionRequiredLocalException, 
+		ActivityAlreadyExistsException, NullPointerException,
+		IllegalStateException, SLEEException, StartActivityException;
+
+}]]>
+    </programlisting>
+
+	<variablelist>
+		<varlistentry>
+			<term>
+				The	<literal>getHttpClientParams()</literal> method:
+			</term>
+			<listitem>
+				<para>Retrieves the params from the client managed by the RA.</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>
+				The <literal>execute(HttpUriRequest, HttpContext, Object)</literal>	method:
+			</term>
+			<listitem>
+				<para>Executes the specified request. The SBB may provide an optional context to use in request execution. The SBB may also provide an application data object, which will be returned to the SBB in the response event. The method returns a new HttpClientNIORequestActivity, which the SBB should use to obtain and attach to the ActivityContextInterface where the response event is delivered.</para>
+			</listitem>
+		</varlistentry>
+		
+		<varlistentry>
+			<term>The <literal>execute(HttpHost, HttpRequest, HttpContext, Object)</literal> method:</term>
+			<listitem>
+				<para>Alternative method to execute a request with different interface, which is complemented by the target host parameter.</para>
+			</listitem>
+		</varlistentry>
+
+	</variablelist>
+	
+</section>

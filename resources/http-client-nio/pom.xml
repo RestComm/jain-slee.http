@@ -26,7 +26,6 @@
 		<docs.bookid>HttpClientNio</docs.bookid>
 	</properties>
 	
-	<!--
 	<profiles>
 		<profile>
 			<id>release</id>
@@ -43,6 +42,5 @@
 			</modules>			
 		</profile>
 	</profiles>
-	-->
 	
 </project>

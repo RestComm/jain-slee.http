@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "../User_Guide.ent">
+%BOOK_ENTITIES;
+]>
+
+<section id="ratype_sbb_code_examples">
+
+	<title>Sbb Code Examples</title>
+
+	<para>The following code examples shows how to use the Resource Adaptor Type for common functionalities.</para>
+	
+	<section id="ratype_sbb_code_examples_set_sbbcontext">
+
+		<title>Retrieving RA SBB Interface and RA Type ACI Factory</title>
+
+		<para>The following code examples the retrieval of the RA and RA Type interfaces, used by the SBB to interact with it:</para>
+		
+		<programlisting language="Java" role="JAVA">
+			<![CDATA[
+	private HttpClientNIOActivityContextInterfaceFactory httpClientACIF;
+	private HttpClientNIOResourceAdaptorSbbInterface httpClientRA;
+
+	public void setSbbContext(SbbContext context) {
+		try {
+			Context ctx = (Context) new InitialContext()
+					.lookup("java:comp/env");
+			httpClientACIF = (HttpClientNIOActivityContextInterfaceFactory) ctx
+					.lookup("slee/resources/http-client-nio/acifactory");
+			httpClientRA = (HttpClientResourceAdaptorSbbInterface) ctx
+					.lookup("slee/resources/http-client-nio/sbbinterface");
+		} catch (NamingException ne) {
+			tracer.severe("Could not set SBB context:", ne);
+		}
+	}]]>
+		</programlisting>
+	</section>
+	
+	<section id="ratype_sbb_code_examples_request_execution">
+
+		<title>Request Execution</title>
+
+		<para>The following code examples the usage of the RA's SBB Interface to execute a request to get "www.telestax.com" page, and how the SBB attaches to the ActivityContextInterface where the response event will be delivered:</para>
+		
+		<programlisting language="Java" role="JAVA">
+			<![CDATA[
+	public void onStartServiceEvent(
+			javax.slee.serviceactivity.ServiceStartedEvent event,
+			ActivityContextInterface aci) {
+		tracer.info("Retreiving www.telestax.com...");
+		try {
+			// executes the request, sends along the current time as app data object
+			HttpClientNIORequestActivity activity = httpClientRA.execute(
+					new HttpGet("http://www.telestax.com"), null,
+					System.currentTimeMillis());
+			httpClientACIF.getActivityContextInterface(activity).attach(
+					sbbContext.getSbbLocalObject());
+		} catch (Exception e) {
+			tracer.severe("failed to retrieve webpage", e);
+		}
+	}]]>
+		</programlisting>
+	</section>
+
+	<section id="ratype_sbb_code_examples_response_handling">
+
+		<title>Response Handling</title>
+
+		<para>The following code examples the handling of a response event:</para>
+		
+		<programlisting language="Java" role="JAVA">
+			<![CDATA[
+	public void onHttpClientNIOResponseEvent(HttpClientNIOResponseEvent event,
+			ActivityContextInterface aci) {
+		HttpResponse response = event.getResponse();
+		// use the time passed as app data object on the request execution, to calculate the time of request execution 
+		tracer.info("Received response in "
+				+ (System.currentTimeMillis() - ((Long) event
+						.getApplicationData())) + "ms, status: "
+				+ response.getStatusLine().getStatusCode());
+		// also logs the response content lenght...
+		try {
+			tracer.info("Response content length = "
+					+ EntityUtils.toString(response.getEntity()).length());
+		} catch (Exception e) {
+			tracer.severe("Failed reading response body", e);
+		}
+	}]]>
+		</programlisting>
+		
+	</section>
+	
+</section>

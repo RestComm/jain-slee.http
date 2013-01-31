@@ -1,12 +1,3 @@
-# SLEE
-${release.dir}
-enablers/rest-client/docs/sources-mobicents/src/
-enablers/rest-client/docs/sources-telscale/src/
-resources/http-client/docs/sources-mobicents/src/
-resources/http-client/docs/sources-telscale/src/
-resources/http-servlet/docs/sources-mobicents/src/
-resources/http-servlet/docs/sources-telscale/src/
-
 # Java compiled #
 #################
 *.class
@@ -32,3 +23,11 @@ target
 Icon?
 ehthumbs.db
 Thumbs.db
+
+# SLEE
+${env.JBOSS_HOME}
+${release.dir}
+enablers/rest-client/docs/sources-telscale/src/
+resources/http-client-nio/docs/sources-telscale/src/
+resources/http-client/docs/sources-telscale/src/
+resources/http-servlet/docs/sources-telscale/src/

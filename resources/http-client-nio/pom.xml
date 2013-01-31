@@ -9,11 +9,9 @@
 		<relativePath>../..</relativePath>
 	</parent>
 	
-	<artifactId>http-client-parent</artifactId>
-	<groupId>org.mobicents.resources</groupId>
+	<artifactId>slee-ra-http-client-nio</artifactId>
+	<groupId>org.mobicents.slee.ra</groupId>
 	
-	<name>Mobicents :: Resources :: ${pom.artifactId}</name>
-
 	<modules>
 		<module>library</module>
 		<module>events</module>
@@ -23,30 +21,10 @@
 	</modules>
 	
 	<properties>
-		<docs.ra.name>HTTP Client</docs.ra.name>
-		<docs.ra.dirname>http-client</docs.ra.dirname>
-		<docs.bookid>HttpClient</docs.bookid>
+		<docs.ra.name>HTTP Client NIO</docs.ra.name>
+		<docs.ra.dirname>http-client-nio</docs.ra.dirname>
+		<docs.bookid>HttpClientNio</docs.bookid>
 	</properties>
-	
-	<build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-eclipse-plugin</artifactId>
-   				<groupId>org.mobicents.tools</groupId>
-				<inherited>false</inherited>
-				<executions />
-				<configuration>
-					<excludePoms />
-					<classpathExcludes>
-						<exclude>xml-apis:xml-apis</exclude>
-						<exclude>jtidy:jtidy</exclude>																		
-					</classpathExcludes>
-					<resolveTransitiveDependencies>true</resolveTransitiveDependencies>
-					<eclipseProjectName>slee-ra-http-client</eclipseProjectName>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 	
 	<profiles>
 		<profile>
@@ -64,5 +42,5 @@
 			</modules>			
 		</profile>
 	</profiles>
-
+	
 </project>

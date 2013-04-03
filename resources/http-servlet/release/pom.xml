@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>http-servlet-parent</artifactId>
 		<groupId>org.mobicents.resources</groupId>
-		<version>6.1.2-TelScale-SNAPSHOT</version>
+		<version>6.1.2.GA-TelScale</version>
 	</parent>
 
 	<artifactId>http-servlet-ra-release</artifactId>

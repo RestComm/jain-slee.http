@@ -24,5 +24,15 @@
 			<config-property-type>java.lang.String</config-property-type>
 			<config-property-value></config-property-value>
 		</config-property>
+		<config-property>
+			<description>Configures the client to override default limit of defaul max concurrent connections for routes</description>
+			<config-property-name>DEFAULT_MAX_CONNECTIONS_PER_ROUTE</config-property-name>
+			<config-property-type>java.lang.Integer</config-property-type>
+		</config-property>
+		<config-property>
+			<description>Max total concurrent connections.</description>
+			<config-property-name>MAX_CONNECTIONS_TOTAL</config-property-name>
+			<config-property-type>java.lang.Integer</config-property-type>
+		</config-property>		
 	</resource-adaptor>
 </resource-adaptor-jar>

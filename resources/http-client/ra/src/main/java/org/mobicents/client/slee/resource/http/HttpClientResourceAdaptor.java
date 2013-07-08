@@ -72,551 +72,629 @@ import org.apache.http.util.EntityUtils;
  */
 public class HttpClientResourceAdaptor implements ResourceAdaptor {
 
-	private static final int EVENT_FLAGS = EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK;
+    private static final int EVENT_FLAGS = EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK;
 
-	private static final String CFG_PROPERTY_HTTP_CLIENT_FACTORY = "HTTP_CLIENT_FACTORY";
-	private static final String CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES = "MAX_CONNECTIONS_FOR_ROUTES";
-	private static final String CFG_PROPERTY_MAX_CONNECTIONS_TOTAL = "MAX_CONNECTIONS_TOTAL";
-	
-	protected ResourceAdaptorContext resourceAdaptorContext;
-	private ConcurrentHashMap<HttpClientActivityHandle, HttpClientActivity> activities;
-	private HttpClientResourceAdaptorSbbInterface sbbInterface;
-	private ExecutorService executorService;
-	private Tracer tracer;
-	protected HttpClient httpclient;
-	protected volatile boolean isActive = false;
+    private static final String CFG_PROPERTY_HTTP_CLIENT_FACTORY = "HTTP_CLIENT_FACTORY";
+    private static final String CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES = "MAX_CONNECTIONS_FOR_ROUTES";
+    private static final String CFG_PROPERTY_MAX_CONNECTIONS_TOTAL = "MAX_CONNECTIONS_TOTAL";
 
-	// caching the only event this ra fires
-	private FireableEventType fireableEventType;
-	
-	// configuration
-	private int maxTotal;
-	private Map<HttpRoute, Integer> maxForRoutes;
-	private HttpClientFactory httpClientFactory;
+    private static final int HTTP_SCHEME_INDEX = 0;
+    private static final int HTTP_HOST_INDEX = 1;
+    private static final int HTTP_PORT_INDEX = 2;
+    private static final int HTTP_MAXFORROUTE_INDEX = 3;
 
-	// LIFECYCLE METHODS
+    private static final int MAX_CONNECTIONS_FOR_ROUTES_TOKEN_LENGTH = 4;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#setResourceAdaptorContext(javax.slee
-	 * .resource.ResourceAdaptorContext)
-	 */
-	public void setResourceAdaptorContext(ResourceAdaptorContext arg0) {
-		resourceAdaptorContext = arg0;
-		tracer = resourceAdaptorContext.getTracer(HttpClientResourceAdaptor.class.getSimpleName());
-		try {
-			fireableEventType = resourceAdaptorContext.getEventLookupFacility().getFireableEventType(
-					new EventTypeID("net.java.client.slee.resource.http.event.ResponseEvent", "net.java.client.slee", "4.0"));
-		} catch (Throwable e) {
-			throw new RuntimeException(e.getMessage(), e);
-		}
-		sbbInterface = new HttpClientResourceAdaptorSbbInterfaceImpl(this);
-	}
+    protected ResourceAdaptorContext resourceAdaptorContext;
+    private ConcurrentHashMap<HttpClientActivityHandle, HttpClientActivity> activities;
+    private HttpClientResourceAdaptorSbbInterface sbbInterface;
+    private ExecutorService executorService;
+    private Tracer tracer;
+    protected HttpClient httpclient;
+    protected volatile boolean isActive = false;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raConfigure(javax.slee.resource.
-	 * ConfigProperties)
-	 */
-	@SuppressWarnings("unchecked")
-	public void raConfigure(ConfigProperties properties) {
-		String httpClientFactoryClassName = (String)properties.getProperty(CFG_PROPERTY_HTTP_CLIENT_FACTORY).getValue();
-		if (httpClientFactoryClassName.isEmpty()) {
-			maxTotal = (Integer)properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
-			maxForRoutes = new HashMap<HttpRoute, Integer>();
-			String maxForRoutesString = (String)properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES).getValue();
-			for(String maxForRoute : maxForRoutesString.split(",")) {
-				if(maxForRoute.isEmpty()) {
-					continue;
-				}
-				String[] maxForRouteParts = maxForRoute.split(":");
-				maxForRoutes.put(new HttpRoute(new HttpHost(maxForRouteParts[0])), Integer.valueOf(maxForRouteParts[1]));
-			}
-		}
-		else {
-			try {
-				httpClientFactory = ((Class<? extends HttpClientFactory>) Class.forName(httpClientFactoryClassName)).newInstance();
-			} catch (Exception e) {
-				tracer.severe("failed to load http client factory class",e);
-			}
-		}
-	}
+    // caching the only event this ra fires
+    private FireableEventType fireableEventType;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raActive()
-	 */
-	public void raActive() {
-		activities = new ConcurrentHashMap<HttpClientActivityHandle, HttpClientActivity>();
-		executorService = Executors.newCachedThreadPool();
-		if (httpClientFactory != null) {
-			httpclient = httpClientFactory.newHttpClient();
-		}
-		else {
-			HttpParams params = new SyncBasicHttpParams();
-			SchemeRegistry schemeRegistry = new SchemeRegistry();
-			schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
-			schemeRegistry.register(new Scheme("https", 443, SSLSocketFactory.getSocketFactory()));
-			ThreadSafeClientConnManager threadSafeClientConnManager = new ThreadSafeClientConnManager(schemeRegistry);
-			threadSafeClientConnManager.setMaxTotal(maxTotal);
-			for (Entry<HttpRoute, Integer> entry : maxForRoutes.entrySet()) {
-				threadSafeClientConnManager.setMaxForRoute(entry.getKey(), entry.getValue());
-			}
-			httpclient = new DefaultHttpClient(threadSafeClientConnManager,params);
-		}
-		isActive = true;
-		if (tracer.isInfoEnabled()) {
-			tracer.info(String.format("HttpClientResourceAdaptor=%s entity activated.", this.resourceAdaptorContext.getEntityName()));
-		}
-	}
+    // configuration
+    private int maxTotal;
+    private Map<HttpRoute, Integer> maxForRoutes;
+    private HttpClientFactory httpClientFactory;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raStopping()
-	 */
-	public void raStopping() {
-		this.isActive = false;
-	}
+    // LIFECYCLE METHODS
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raInactive()
-	 */
-	public void raInactive() {
-		this.isActive = false;
-		activities.clear();
-		activities = null;
-		executorService.shutdown();
-		executorService = null;
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#setResourceAdaptorContext(javax.slee
+     * .resource.ResourceAdaptorContext)
+     */
+    public void setResourceAdaptorContext(ResourceAdaptorContext arg0) {
+        resourceAdaptorContext = arg0;
+        tracer = resourceAdaptorContext.getTracer(HttpClientResourceAdaptor.class.getSimpleName());
+        try {
+            fireableEventType = resourceAdaptorContext.getEventLookupFacility().getFireableEventType(
+                    new EventTypeID("net.java.client.slee.resource.http.event.ResponseEvent", "net.java.client.slee",
+                            "4.0"));
+        } catch (Throwable e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+        sbbInterface = new HttpClientResourceAdaptorSbbInterfaceImpl(this);
+    }
 
-		this.httpclient.getConnectionManager().shutdown();
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raConfigure(javax.slee.resource.
+     * ConfigProperties)
+     */
+    @SuppressWarnings("unchecked")
+    public void raConfigure(ConfigProperties properties) {
+        String httpClientFactoryClassName = (String) properties.getProperty(CFG_PROPERTY_HTTP_CLIENT_FACTORY)
+                .getValue();
+        if (httpClientFactoryClassName.isEmpty()) {
+            maxTotal = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
 
-		this.httpclient = null;
-	}
+            maxForRoutes = new HashMap<HttpRoute, Integer>();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raUnconfigure()
-	 */
-	public void raUnconfigure() {
-		// nothing to do
-	}
+            String maxForRoutesString = (String) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES)
+                    .getValue();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#unsetResourceAdaptorContext()
-	 */
-	public void unsetResourceAdaptorContext() {
-		resourceAdaptorContext = null;
-		tracer = null;
-		sbbInterface = null;
-	}
+            String[] maxForRoutesStrings = maxForRoutesString.split(",");
 
-	// CONFIG MANAGENT
+            for (String maxForRoute : maxForRoutesStrings) {
+                if (maxForRoute.isEmpty()) {
+                    continue;
+                }
+                String[] maxForRouteParts = maxForRoute.split(":");
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#raVerifyConfiguration(javax.slee.
-	 * resource.ConfigProperties)
-	 */
-	@SuppressWarnings("unchecked")
-	public void raVerifyConfiguration(ConfigProperties properties) throws InvalidConfigurationException {
-		String httpClientFactoryClassName = (String)properties.getProperty(CFG_PROPERTY_HTTP_CLIENT_FACTORY).getValue();
-		if (httpClientFactoryClassName.isEmpty()) {
-			try {
-				Integer i = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
-				if (i<1) {
-					throw new InvalidConfigurationException(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL+" must be > 0");
-				}
-			} catch (InvalidConfigurationException e) {
-				throw e;		
-			} catch (Exception e) {
-				tracer.severe("failure in config validation", e);
-				throw new InvalidConfigurationException(e.getMessage());
-			}
+                String scheme = maxForRouteParts[HTTP_SCHEME_INDEX];
+                if (scheme == null || scheme.equals("")) {
+                    scheme = HttpHost.DEFAULT_SCHEME_NAME;
+                }
 
-			try {
-		        String maxForRoutesString = (String)properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES).getValue();
-		        for(String maxForRoute : maxForRoutesString.split(",")) {
-		        	if(maxForRoute.isEmpty()) {
-		        		continue;
-		        	}
-		        	String[] maxForRouteParts = maxForRoute.split(":");
-		        	new HttpRoute(new HttpHost(maxForRouteParts[0]));
-		        	Integer max = Integer.valueOf(maxForRouteParts[1]);
-		        	if (max <1) {
-						throw new InvalidConfigurationException(CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES+" entries must have max > 0");
-		        	}
-		        }
-			} catch (InvalidConfigurationException e) {
-				throw e;		
-			} catch (Exception e) {
-				tracer.severe("failure in config validation", e);
-				throw new InvalidConfigurationException(e.getMessage());
-			}
-		}
-		else {
-			try {
-				Class<? extends HttpClientFactory> c = (Class<? extends HttpClientFactory>) Class.forName(httpClientFactoryClassName);
-				c.newInstance();
-			} catch (Exception e) {
-				tracer.severe("failed to load http client factory class",e);
-				throw new InvalidConfigurationException("failed to load http client factory class",e);
-			}
-		}
+                String host = maxForRouteParts[HTTP_HOST_INDEX];
 
-	
+                String portStr = maxForRouteParts[HTTP_PORT_INDEX];
+                if (portStr == null || portStr.equals("")) {
+                    portStr = "80";
+                }
 
-	}
+                int port = Integer.parseInt(portStr);
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#raConfigurationUpdate(javax.slee.
-	 * resource.ConfigProperties)
-	 */
-	public void raConfigurationUpdate(ConfigProperties arg0) {
-		// not supported
-	}
+                String maxForRoutePartsStr = maxForRouteParts[HTTP_MAXFORROUTE_INDEX];
+                Integer max = Integer.valueOf(maxForRoutePartsStr);
 
-	// EVENT FILTERING
+                HttpRoute httpRoute = new HttpRoute(new HttpHost(host, port, scheme));
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#serviceActive(javax.slee.resource
-	 * .ReceivableService)
-	 */
-	public void serviceActive(ReceivableService arg0) {
-		// no event filtering
-	}
+                maxForRoutes.put(httpRoute, max);
+            }
+        } else {
+            try {
+                httpClientFactory = ((Class<? extends HttpClientFactory>) Class.forName(httpClientFactoryClassName))
+                        .newInstance();
+            } catch (Exception e) {
+                tracer.severe("failed to load http client factory class", e);
+            }
+        }
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#serviceStopping(javax.slee.resource
-	 * .ReceivableService)
-	 */
-	public void serviceStopping(ReceivableService arg0) {
-		// no event filtering
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raActive()
+     */
+    public void raActive() {
+        activities = new ConcurrentHashMap<HttpClientActivityHandle, HttpClientActivity>();
+        executorService = Executors.newCachedThreadPool();
+        if (httpClientFactory != null) {
+            httpclient = httpClientFactory.newHttpClient();
+        } else {
+            HttpParams params = new SyncBasicHttpParams();
+            SchemeRegistry schemeRegistry = new SchemeRegistry();
+            schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
+            schemeRegistry.register(new Scheme("https", 443, SSLSocketFactory.getSocketFactory()));
+            ThreadSafeClientConnManager threadSafeClientConnManager = new ThreadSafeClientConnManager(schemeRegistry);
+            threadSafeClientConnManager.setMaxTotal(maxTotal);
+            for (Entry<HttpRoute, Integer> entry : maxForRoutes.entrySet()) {
+                if(tracer.isInfoEnabled()){
+                    tracer.info(String.format("Configuring MaxForRoute %s max %d", entry.getKey(), entry.getValue()));
+                }
+                threadSafeClientConnManager.setMaxForRoute(entry.getKey(), entry.getValue());
+            }
+            httpclient = new DefaultHttpClient(threadSafeClientConnManager, params);
+        }
+        isActive = true;
+        if (tracer.isInfoEnabled()) {
+            tracer.info(String.format("HttpClientResourceAdaptor=%s entity activated.",
+                    this.resourceAdaptorContext.getEntityName()));
+        }
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#serviceInactive(javax.slee.resource
-	 * .ReceivableService)
-	 */
-	public void serviceInactive(ReceivableService arg0) {
-		// no event filtering
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raStopping()
+     */
+    public void raStopping() {
+        this.isActive = false;
+    }
 
-	// ACCESS INTERFACE
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raInactive()
+     */
+    public void raInactive() {
+        this.isActive = false;
+        activities.clear();
+        activities = null;
+        executorService.shutdown();
+        executorService = null;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#getResourceAdaptorInterface(java.
-	 * lang.String)
-	 */
-	public Object getResourceAdaptorInterface(String arg0) {
-		return sbbInterface;
-	};
+        this.httpclient.getConnectionManager().shutdown();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#getMarshaler()
-	 */
-	public Marshaler getMarshaler() {
-		return null;
-	}
+        this.httpclient = null;
+    }
 
-	// MANDATORY CALLBACKS
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raUnconfigure()
+     */
+    public void raUnconfigure() {
+        // nothing to do
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#administrativeRemove(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void administrativeRemove(ActivityHandle arg0) {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#unsetResourceAdaptorContext()
+     */
+    public void unsetResourceAdaptorContext() {
+        resourceAdaptorContext = null;
+        tracer = null;
+        sbbInterface = null;
+    }
 
-	}
+    // CONFIG MANAGENT
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#getActivity(javax.slee.resource.
-	 * ActivityHandle)
-	 */
-	public Object getActivity(ActivityHandle activityHandle) {
-		return activities.get(activityHandle);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#raVerifyConfiguration(javax.slee.
+     * resource.ConfigProperties)
+     */
+    @SuppressWarnings("unchecked")
+    public void raVerifyConfiguration(ConfigProperties properties) throws InvalidConfigurationException {
+        String httpClientFactoryClassName = (String) properties.getProperty(CFG_PROPERTY_HTTP_CLIENT_FACTORY)
+                .getValue();
+        if (httpClientFactoryClassName.isEmpty()) {
+            try {
+                Integer i = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
+                if (i < 1) {
+                    throw new InvalidConfigurationException(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL + " must be > 0");
+                }
+            } catch (InvalidConfigurationException e) {
+                throw e;
+            } catch (Exception e) {
+                tracer.severe("failure in config validation", e);
+                throw new InvalidConfigurationException(e.getMessage());
+            }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#getActivityHandle(java.lang.Object)
-	 */
-	public ActivityHandle getActivityHandle(Object arg0) {
-		if (arg0 instanceof HttpClientActivityImpl) {
-			HttpClientActivityHandle handle = new HttpClientActivityHandle(((HttpClientActivityImpl) arg0).getSessionId());
-			if (activities.containsKey(handle)) {
-				return handle;
-			}
-		}
-		return null;
-	}
+            try {
+                String maxForRoutesString = (String) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES)
+                        .getValue();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#queryLiveness(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void queryLiveness(ActivityHandle arg0) {
-		// if the activity is not in the map end it, its a leak
-		if (!activities.contains(arg0)) {
-			resourceAdaptorContext.getSleeEndpoint().endActivity(arg0);
-		}
-	}
+                String[] maxForRoutesStrings = maxForRoutesString.split(",");
+                for (String maxForRoute : maxForRoutesStrings) {
+                    if (maxForRoute.isEmpty()) {
+                        continue;
+                    }
+                    String[] maxForRouteParts = maxForRoute.split(":");
 
-	// OPTIONAL CALLBACKS
+                    if (maxForRouteParts.length != MAX_CONNECTIONS_FOR_ROUTES_TOKEN_LENGTH) {
+                        throw new InvalidConfigurationException(CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES
+                                + " format is scheme:host:port:maxForRoute separated by comma");
+                    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#eventProcessingSuccessful(javax.slee
-	 * .resource.ActivityHandle, javax.slee.resource.FireableEventType,
-	 * java.lang.Object, javax.slee.Address,
-	 * javax.slee.resource.ReceivableService, int)
-	 */
-	public void eventProcessingSuccessful(ActivityHandle arg0, FireableEventType arg1, Object arg2, Address arg3, ReceivableService arg4, int arg5) {
-		// not used
-	}
+                    String scheme = maxForRouteParts[HTTP_SCHEME_INDEX];
+                    if (scheme == null || scheme.equals("")) {
+                        scheme = HttpHost.DEFAULT_SCHEME_NAME;
+                    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#eventProcessingFailed(javax.slee.
-	 * resource.ActivityHandle, javax.slee.resource.FireableEventType,
-	 * java.lang.Object, javax.slee.Address,
-	 * javax.slee.resource.ReceivableService, int,
-	 * javax.slee.resource.FailureReason)
-	 */
-	public void eventProcessingFailed(ActivityHandle arg0, FireableEventType arg1, Object arg2, Address arg3, ReceivableService arg4, int arg5,
-			FailureReason arg6) {
-		// not used
-	}
+                    String host = maxForRouteParts[HTTP_HOST_INDEX];
+                    if (host == null || host.equals("")) {
+                        throw new InvalidConfigurationException(
+                                CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES
+                                        + " format is scheme:host:port:maxForRoute separated by comma. Passing host is mandatory");
+                    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#eventUnreferenced(javax.slee.resource
-	 * .ActivityHandle, javax.slee.resource.FireableEventType, java.lang.Object,
-	 * javax.slee.Address, javax.slee.resource.ReceivableService, int)
-	 */
-	public void eventUnreferenced(ActivityHandle arg0, FireableEventType arg1, Object arg2, Address arg3, ReceivableService arg4, int arg5) {
-		if (tracer.isFineEnabled()) {
-			tracer.fine(String.format("Event=%s unreferenced", arg2));
-		}
+                    String portStr = maxForRouteParts[HTTP_PORT_INDEX];
+                    if (portStr == null || portStr.equals("")) {
+                        portStr = "80";
+                    }
 
-		if (arg2 instanceof ResponseEvent) {
-			ResponseEvent event = (ResponseEvent) arg2;
-			HttpResponse response = event.getHttpResponse();
-			
-			//May be this event  is carrying Exception and not actual Response in which case
-			//skip housekeeping
-			if(response != null){
-				try {
-					EntityUtils.consume(response.getEntity());
-				} catch (IOException e) {
-					this.tracer.severe("Exception while housekeeping. Event unreferenced", e);
-				}
-			}
-		}
-	}
+                    int port = Integer.parseInt(portStr);
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#activityEnded(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void activityEnded(ActivityHandle activityHandle) {
-		if (tracer.isFineEnabled()) {
-			tracer.fine("activityEnded( handle = " + activityHandle + ")");
-		}
-		activities.remove(activityHandle);
-	}
+                    String maxForRoutePartsStr = maxForRouteParts[HTTP_MAXFORROUTE_INDEX];
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#activityUnreferenced(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void activityUnreferenced(ActivityHandle arg0) {
-		// not used
-	}
+                    Integer max = Integer.valueOf(maxForRoutePartsStr);
+                    if (max < 1) {
+                        throw new InvalidConfigurationException(
+                                CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES
+                                        + " format is scheme:host:port:maxForRoute separated by comma. Passing maxForRoute is mandatory and must be greater than 0");
+                    }
 
-	// OWN METHODS
+                    new HttpRoute(new HttpHost(host, port, scheme));
 
-	/**
-	 * Retrieves the ra context
-	 * 
-	 * @return
-	 */
-	public ResourceAdaptorContext getResourceAdaptorContext() {
-		return resourceAdaptorContext;
-	}
+                }
+            } catch (InvalidConfigurationException e) {
+                throw e;
+            } catch (Exception e) {
+                tracer.severe("failure in config validation", e);
+                throw new InvalidConfigurationException(e.getMessage());
+            }
+        } else {
+            try {
+                Class<? extends HttpClientFactory> c = (Class<? extends HttpClientFactory>) Class
+                        .forName(httpClientFactoryClassName);
+                c.newInstance();
+            } catch (Exception e) {
+                tracer.severe("failed to load http client factory class", e);
+                throw new InvalidConfigurationException("failed to load http client factory class", e);
+            }
+        }
 
-	/**
-	 * Retrieves the executor service
-	 */
-	public ExecutorService getExecutorService() {
-		return executorService;
-	}
+    }
 
-	/**
-	 * Maps the specified activity to the specified handle
-	 * 
-	 * @param activityHandle
-	 * @param activity
-	 */
-	public void addActivity(HttpClientActivityHandle activityHandle, HttpClientActivity activity) {
-		activities.put(activityHandle, activity);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#raConfigurationUpdate(javax.slee.
+     * resource.ConfigProperties)
+     */
+    public void raConfigurationUpdate(ConfigProperties arg0) {
+        // not supported
+    }
 
-	/**
-	 * Ends the specified activity
-	 * 
-	 * @param activity
-	 */
-	public void endActivity(HttpClientActivity activity) {
+    // EVENT FILTERING
 
-		final HttpClientActivityHandle ah = new HttpClientActivityHandle(activity.getSessionId());
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#serviceActive(javax.slee.resource
+     * .ReceivableService)
+     */
+    public void serviceActive(ReceivableService arg0) {
+        // no event filtering
+    }
 
-		if (activities.containsKey(ah)) {
-			resourceAdaptorContext.getSleeEndpoint().endActivity(ah);
-		}
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#serviceStopping(javax.slee.resource
+     * .ReceivableService)
+     */
+    public void serviceStopping(ReceivableService arg0) {
+        // no event filtering
+    }
 
-	/**
-	 * Receives an Event from the HTTP client and sends it to the SLEE.
-	 * 
-	 * @param event
-	 * @param activity
-	 */
-	public void processResponseEvent(ResponseEvent event, HttpClientActivity activity) {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#serviceInactive(javax.slee.resource
+     * .ReceivableService)
+     */
+    public void serviceInactive(ReceivableService arg0) {
+        // no event filtering
+    }
 
-		HttpClientActivityHandle ah = new HttpClientActivityHandle(activity.getSessionId());
+    // ACCESS INTERFACE
 
-		if (tracer.isFineEnabled())
-			tracer.fine("==== FIRING ResponseEvent EVENT TO LOCAL SLEE, Event: " + event + " ====");
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#getResourceAdaptorInterface(java.
+     * lang.String)
+     */
+    public Object getResourceAdaptorInterface(String arg0) {
+        return sbbInterface;
+    };
 
-		try {
-			resourceAdaptorContext.getSleeEndpoint().fireEvent(ah, fireableEventType, event, null, null, EVENT_FLAGS);
-		} catch (Throwable e) {
-			tracer.severe(e.getMessage(), e);
-		}
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#getMarshaler()
+     */
+    public Marshaler getMarshaler() {
+        return null;
+    }
 
-	protected class AsyncExecuteMethodHandler implements Runnable {
+    // MANDATORY CALLBACKS
 
-		private final HttpRequest httpRequest;
-		private final HttpContext httpContext;
-		private final HttpHost httpHost;
-		private final HttpClientActivity activity;
-		private final Object requestApplicationData;
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#administrativeRemove(javax.slee.resource
+     * .ActivityHandle)
+     */
+    public void administrativeRemove(ActivityHandle arg0) {
 
-		protected AsyncExecuteMethodHandler(HttpUriRequest request, Object requestApplicationData, HttpClientActivity activity, HttpContext httpContext) {
-			this(null, request, requestApplicationData, httpContext, activity);
-		}
+    }
 
-		protected AsyncExecuteMethodHandler(HttpHost target, HttpRequest request, Object requestApplicationData, HttpContext context, HttpClientActivity activity) {
-			this.httpHost = target;
-			this.httpRequest = request;
-			this.httpContext = context;
-			this.activity = activity;
-			this.requestApplicationData = requestApplicationData;
-		}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#getActivity(javax.slee.resource.
+     * ActivityHandle)
+     */
+    public Object getActivity(ActivityHandle activityHandle) {
+        return activities.get(activityHandle);
+    }
 
-		public void run() {
-			if(tracer.isFineEnabled()) {
-				tracer.fine("Executing Request "+httpRequest);
-			}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#getActivityHandle(java.lang.Object)
+     */
+    public ActivityHandle getActivityHandle(Object arg0) {
+        if (arg0 instanceof HttpClientActivityImpl) {
+            HttpClientActivityHandle handle = new HttpClientActivityHandle(
+                    ((HttpClientActivityImpl) arg0).getSessionId());
+            if (activities.containsKey(handle)) {
+                return handle;
+            }
+        }
+        return null;
+    }
 
-			ResponseEvent event = null;
-			HttpResponse response = null;
-			try {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#queryLiveness(javax.slee.resource
+     * .ActivityHandle)
+     */
+    public void queryLiveness(ActivityHandle arg0) {
+        // if the activity is not in the map end it, its a leak
+        if (!activities.contains(arg0)) {
+            resourceAdaptorContext.getSleeEndpoint().endActivity(arg0);
+        }
+    }
 
-				if (this.httpHost != null) {
-					response = httpclient.execute(this.httpHost, this.httpRequest, this.httpContext);
-				} else if (this.httpContext != null) {
-					response = httpclient.execute((HttpUriRequest) this.httpRequest, this.httpContext);
-				}
+    // OPTIONAL CALLBACKS
 
-				if(tracer.isFineEnabled()) {
-					tracer.fine("Executed Request "+httpRequest);
-				}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#eventProcessingSuccessful(javax.slee
+     * .resource.ActivityHandle, javax.slee.resource.FireableEventType,
+     * java.lang.Object, javax.slee.Address,
+     * javax.slee.resource.ReceivableService, int)
+     */
+    public void eventProcessingSuccessful(ActivityHandle arg0, FireableEventType arg1, Object arg2, Address arg3,
+            ReceivableService arg4, int arg5) {
+        // not used
+    }
 
-				// create event with response
-				event = new ResponseEvent(response,requestApplicationData);
-			} catch (IOException e) {
-				tracer.severe("executeMethod failed in AsyncExecuteHttpMethodHandler with IOException", e);
-				event = new ResponseEvent(e, requestApplicationData);
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#eventProcessingFailed(javax.slee.
+     * resource.ActivityHandle, javax.slee.resource.FireableEventType,
+     * java.lang.Object, javax.slee.Address,
+     * javax.slee.resource.ReceivableService, int,
+     * javax.slee.resource.FailureReason)
+     */
+    public void eventProcessingFailed(ActivityHandle arg0, FireableEventType arg1, Object arg2, Address arg3,
+            ReceivableService arg4, int arg5, FailureReason arg6) {
+        // not used
+    }
 
-			} catch (Exception e) {
-				tracer.severe("executeMethod failed in AsyncExecuteHttpMethodHandler with Exception", e);
-				event = new ResponseEvent(e, requestApplicationData);
-			}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#eventUnreferenced(javax.slee.resource
+     * .ActivityHandle, javax.slee.resource.FireableEventType, java.lang.Object,
+     * javax.slee.Address, javax.slee.resource.ReceivableService, int)
+     */
+    public void eventUnreferenced(ActivityHandle arg0, FireableEventType arg1, Object arg2, Address arg3,
+            ReceivableService arg4, int arg5) {
+        if (tracer.isFineEnabled()) {
+            tracer.fine(String.format("Event=%s unreferenced", arg2));
+        }
 
-			
-			if(this.activity.isEnded()){
-			    //received response event for which activity is already ended. Just add this in logs
-			    tracer.warning(String.format("Wanted to fire ResponseEvent for HttpClientActivity %s but activity is already ended, " +
-			    		"droping event", this.activity.getSessionId()));
-			    return;
-			}
-			
-			// process event
-			processResponseEvent(event, this.activity);
+        if (arg2 instanceof ResponseEvent) {
+            ResponseEvent event = (ResponseEvent) arg2;
+            HttpResponse response = event.getHttpResponse();
 
-			// If EndOnReceivingResponse is set to true, end the Activity
-			if (this.activity.getEndOnReceivingResponse()) {
-			    try{
-			        endActivity(this.activity);
-			    } finally {
-			        ((HttpClientActivityImpl)this.activity).setEnded(true);
-			    }
-			}
-		}
+            // May be this event is carrying Exception and not actual Response
+            // in which case
+            // skip housekeeping
+            if (response != null) {
+                try {
+                    EntityUtils.consume(response.getEntity());
+                } catch (IOException e) {
+                    this.tracer.severe("Exception while housekeeping. Event unreferenced", e);
+                }
+            }
+        }
+    }
 
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#activityEnded(javax.slee.resource
+     * .ActivityHandle)
+     */
+    public void activityEnded(ActivityHandle activityHandle) {
+        if (tracer.isFineEnabled()) {
+            tracer.fine("activityEnded( handle = " + activityHandle + ")");
+        }
+        activities.remove(activityHandle);
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * javax.slee.resource.ResourceAdaptor#activityUnreferenced(javax.slee.resource
+     * .ActivityHandle)
+     */
+    public void activityUnreferenced(ActivityHandle arg0) {
+        // not used
+    }
+
+    // OWN METHODS
+
+    /**
+     * Retrieves the ra context
+     * 
+     * @return
+     */
+    public ResourceAdaptorContext getResourceAdaptorContext() {
+        return resourceAdaptorContext;
+    }
+
+    /**
+     * Retrieves the executor service
+     */
+    public ExecutorService getExecutorService() {
+        return executorService;
+    }
+
+    /**
+     * Maps the specified activity to the specified handle
+     * 
+     * @param activityHandle
+     * @param activity
+     */
+    public void addActivity(HttpClientActivityHandle activityHandle, HttpClientActivity activity) {
+        activities.put(activityHandle, activity);
+    }
+
+    /**
+     * Ends the specified activity
+     * 
+     * @param activity
+     */
+    public void endActivity(HttpClientActivity activity) {
+
+        final HttpClientActivityHandle ah = new HttpClientActivityHandle(activity.getSessionId());
+
+        if (activities.containsKey(ah)) {
+            resourceAdaptorContext.getSleeEndpoint().endActivity(ah);
+        }
+    }
+
+    /**
+     * Receives an Event from the HTTP client and sends it to the SLEE.
+     * 
+     * @param event
+     * @param activity
+     */
+    public void processResponseEvent(ResponseEvent event, HttpClientActivity activity) {
+
+        HttpClientActivityHandle ah = new HttpClientActivityHandle(activity.getSessionId());
+
+        if (tracer.isFineEnabled())
+            tracer.fine("==== FIRING ResponseEvent EVENT TO LOCAL SLEE, Event: " + event + " ====");
+
+        try {
+            resourceAdaptorContext.getSleeEndpoint().fireEvent(ah, fireableEventType, event, null, null, EVENT_FLAGS);
+        } catch (Throwable e) {
+            tracer.severe(e.getMessage(), e);
+        }
+    }
+
+    protected class AsyncExecuteMethodHandler implements Runnable {
+
+        private final HttpRequest httpRequest;
+        private final HttpContext httpContext;
+        private final HttpHost httpHost;
+        private final HttpClientActivity activity;
+        private final Object requestApplicationData;
+
+        protected AsyncExecuteMethodHandler(HttpUriRequest request, Object requestApplicationData,
+                HttpClientActivity activity, HttpContext httpContext) {
+            this(null, request, requestApplicationData, httpContext, activity);
+        }
+
+        protected AsyncExecuteMethodHandler(HttpHost target, HttpRequest request, Object requestApplicationData,
+                HttpContext context, HttpClientActivity activity) {
+            this.httpHost = target;
+            this.httpRequest = request;
+            this.httpContext = context;
+            this.activity = activity;
+            this.requestApplicationData = requestApplicationData;
+        }
+
+        public void run() {
+            if (tracer.isFineEnabled()) {
+                tracer.fine("Executing Request " + httpRequest);
+            }
+
+            ResponseEvent event = null;
+            HttpResponse response = null;
+            try {
+
+                if (this.httpHost != null) {
+                    response = httpclient.execute(this.httpHost, this.httpRequest, this.httpContext);
+                } else if (this.httpContext != null) {
+                    response = httpclient.execute((HttpUriRequest) this.httpRequest, this.httpContext);
+                }
+
+                if (tracer.isFineEnabled()) {
+                    tracer.fine("Executed Request " + httpRequest);
+                }
+
+                // create event with response
+                event = new ResponseEvent(response, requestApplicationData);
+            } catch (IOException e) {
+                tracer.severe("executeMethod failed in AsyncExecuteHttpMethodHandler with IOException", e);
+                event = new ResponseEvent(e, requestApplicationData);
+
+            } catch (Exception e) {
+                tracer.severe("executeMethod failed in AsyncExecuteHttpMethodHandler with Exception", e);
+                event = new ResponseEvent(e, requestApplicationData);
+            }
+
+            if (this.activity.isEnded()) {
+                // received response event for which activity is already ended.
+                // Just add this in logs
+                tracer.warning(String.format(
+                        "Wanted to fire ResponseEvent for HttpClientActivity %s but activity is already ended, "
+                                + "droping event", this.activity.getSessionId()));
+                return;
+            }
+
+            // process event
+            processResponseEvent(event, this.activity);
+
+            // If EndOnReceivingResponse is set to true, end the Activity
+            if (this.activity.getEndOnReceivingResponse()) {
+                try {
+                    endActivity(this.activity);
+                } finally {
+                    ((HttpClientActivityImpl) this.activity).setEnded(true);
+                }
+            }
+        }
+
+    }
 
 }

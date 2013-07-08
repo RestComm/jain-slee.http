@@ -54,6 +54,12 @@ public interface HttpClientActivity {
 	 * has to explicitly call endActivity() method to end the Activity.
 	 */
 	public void endActivity();
+	
+	/**
+	 * Flag indicating if this activity is already ended
+	 * @return
+	 */
+	public boolean isEnded();
 
 	/**
 	 * @return Returns true if this Activity is set to end as soon as the

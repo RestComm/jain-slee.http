@@ -42,6 +42,7 @@ public class HttpClientActivityImpl implements HttpClientActivity {
 	private final HttpClientResourceAdaptor ra;
 	private final boolean endOnReceivingResponse;
 	private final HttpContext context;
+	private volatile boolean ended = false;
 
 	public HttpClientActivityImpl(HttpClientResourceAdaptor ra,
 			boolean endOnReceivingResponse, HttpContext context) {
@@ -58,7 +59,11 @@ public class HttpClientActivityImpl implements HttpClientActivity {
 			throw new IllegalStateException(
 					"Activity will end automatically as soon as Response is received");
 		}
-		this.ra.endActivity(this);
+		try{
+		    this.ra.endActivity(this);
+		}finally{
+		    this.ended = true;
+		}
 	}
 
 	@Override
@@ -90,8 +95,16 @@ public class HttpClientActivityImpl implements HttpClientActivity {
 	public String getSessionId() {
 		return sessionId;
 	}
-
 	@Override
+	public boolean isEnded() {
+        return ended;
+    }
+
+    protected void setEnded(boolean ended) {
+        this.ended = ended;
+    }
+
+    @Override
 	public int hashCode() {
 		return sessionId.hashCode();
 	}

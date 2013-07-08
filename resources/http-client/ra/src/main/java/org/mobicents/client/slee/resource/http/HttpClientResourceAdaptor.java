@@ -596,12 +596,24 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
 				event = new ResponseEvent(e, requestApplicationData);
 			}
 
+			
+			if(this.activity.isEnded()){
+			    //received response event for which activity is already ended. Just add this in logs
+			    tracer.warning(String.format("Wanted to fire ResponseEvent for HttpClientActivity %s but activity is already ended, " +
+			    		"droping event", this.activity.getSessionId()));
+			    return;
+			}
+			
 			// process event
 			processResponseEvent(event, this.activity);
 
 			// If EndOnReceivingResponse is set to true, end the Activity
 			if (this.activity.getEndOnReceivingResponse()) {
-				endActivity(this.activity);
+			    try{
+			        endActivity(this.activity);
+			    } finally {
+			        ((HttpClientActivityImpl)this.activity).setEnded(true);
+			    }
 			}
 		}
 

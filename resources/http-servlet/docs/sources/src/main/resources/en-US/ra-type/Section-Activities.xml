@@ -42,12 +42,19 @@ public interface HttpServletRequestActivity {
 	
 	<programlisting language="Java" role="JAVA">
 		<![CDATA[
-package net.java.slee.resource.http;
-
 public interface HttpSessionActivity {
 
+	/**
+	 * Retrieves the Session's ID.
+	 * 
+	 * @return Session ID
+	 */
 	public String getSessionId();
 	
+	/**
+	 * Ends the underlying Activity and invalidates the HttpSession
+	 */
+	public void endActivity();
 }]]>
      </programlisting>
      
@@ -58,6 +65,12 @@ public interface HttpSessionActivity {
 				<para>Retrieves the Session's ID.</para>
 			</listitem>
 		</varlistentry>
+     	<varlistentry>
+			<term>The <literal>endActivity()</literal> method:</term>
+			<listitem>
+				<para>In validates the HTTPSession and kills the JSLEE Activity.</para>
+			</listitem>
+		</varlistentry>		
 	</variablelist>
 		
 </section>

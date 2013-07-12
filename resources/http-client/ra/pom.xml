@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>http-client-parent</artifactId>
 		<groupId>org.mobicents.resources</groupId>
-		<version>6.1.3-TelScale-SNAPSHOT</version>
+		<version>6.1.4.GA-TelScale</version>
 	</parent>
 	
 	<artifactId>http-client-ra</artifactId>

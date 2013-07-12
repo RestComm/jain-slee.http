@@ -6,7 +6,7 @@
 	<parent>
 		<artifactId>slee-ra-http-client-nio</artifactId>
 		<groupId>org.mobicents.slee.ra</groupId>
-		<version>6.1.4.GA-TelScale</version>
+		<version>6.1.5-TelScale-SNAPSHOT</version>
 	</parent>
 	
 	<artifactId>slee-ra-http-client-nio-docs</artifactId>

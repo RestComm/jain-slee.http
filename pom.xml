@@ -9,7 +9,7 @@
 	
 	<groupId>org.mobicents.servers.jainslee.http</groupId>
 	<artifactId>mobicents-slee-http</artifactId>
-	<version>6.1.4.GA-TelScale</version>
+	<version>6.1.5-TelScale-SNAPSHOT</version>
 			
 	<packaging>pom</packaging>
 	

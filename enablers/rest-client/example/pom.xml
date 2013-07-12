@@ -6,7 +6,7 @@
 	<parent>
 		<artifactId>mobicents-slee-enabler-rest-client</artifactId>
 		<groupId>org.mobicents.servers.jainslee.enablers</groupId>
-		<version>6.1.4.GA-TelScale</version>
+		<version>6.1.5-TelScale-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>mobicents-slee-enabler-rest-client-example</artifactId>

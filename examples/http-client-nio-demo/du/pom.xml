@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>slee-example-http-client-nio-demo</artifactId>
 		<groupId>org.mobicents.slee.examples</groupId>
-		<version>6.1.4.GA-TelScale</version>
+		<version>6.1.5-TelScale-SNAPSHOT</version>
 	</parent>
 	
 	<artifactId>slee-example-http-client-nio-demo-DU</artifactId>

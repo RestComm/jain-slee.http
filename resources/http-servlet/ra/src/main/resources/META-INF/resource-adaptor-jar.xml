@@ -26,8 +26,12 @@
         <config-property>
             <config-property-name>name</config-property-name>
             <config-property-type>java.lang.String</config-property-type>
-            <config-property-value>${servlet-name}</config-property-value>
         </config-property>
+		<config-property>
+			<description>Once HTTP request is received, RA will wait for configured milliseconds before responding back empty HTTP Response</description>
+			<config-property-name>HTTP_REQUEST_TIMEOUT</config-property-name>
+			<config-property-type>java.lang.Integer</config-property-type>
+		</config-property>        
         
     </resource-adaptor>
     

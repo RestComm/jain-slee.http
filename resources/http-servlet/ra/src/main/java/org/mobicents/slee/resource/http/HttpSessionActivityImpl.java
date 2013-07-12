@@ -31,18 +31,28 @@ import net.java.slee.resource.http.HttpSessionActivity;
  * 
  */
 public class HttpSessionActivityImpl extends AbstractHttpServletActivity implements HttpSessionActivity {
+    
+    private final HttpSessionWrapper httpSessionWrapper;
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	public HttpSessionActivityImpl(String sessionId) {
-		super(sessionId);
-	}
-
+	public HttpSessionActivityImpl(HttpSessionWrapper httpSessionWrapper) {
+        super(httpSessionWrapper.getId());
+        this.httpSessionWrapper = httpSessionWrapper;
+    }
+	
+	
 	public String getSessionId() {
 		return id;
 	}
+
+
+    @Override
+    public void endActivity() {
+        this.httpSessionWrapper.invalidate();
+    }
 	
 }

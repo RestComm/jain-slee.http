@@ -3,6 +3,7 @@
   <ra-entity resource-adaptor-id="ResourceAdaptorID[name=HttpServletResourceAdaptor,vendor=org.mobicents,version=1.0]" entity-name="HttpServletRA">
     <properties>
    		<property name="name" type="java.lang.String" value="${servlet-name}" />
+   		<property name="HTTP_REQUEST_TIMEOUT" type="java.lang.Integer" value="60000" />
     </properties>
     <ra-link name="HttpServletRA" />
   </ra-entity>

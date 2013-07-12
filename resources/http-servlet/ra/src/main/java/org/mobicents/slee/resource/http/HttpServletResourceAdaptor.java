@@ -82,8 +82,12 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 	 * the ra entity name, which matches the servlet name
 	 */
 	private String name;
+	
+	private int httpRequestTimeout;
 
 	private static final String NAME_CONFIG_PROPERTY = "name";
+	
+	private static final String CFG_PROPERTY_HTTP_REQUEST_TIMEOUT = "HTTP_REQUEST_TIMEOUT";
 
 	/**
 	 * 
@@ -145,6 +149,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 	 */
 	public void raConfigure(ConfigProperties arg0) {
 		name = (String) arg0.getProperty(NAME_CONFIG_PROPERTY).getValue();
+		httpRequestTimeout = (Integer)arg0.getProperty(CFG_PROPERTY_HTTP_REQUEST_TIMEOUT).getValue();
 	}
 
 	/*
@@ -211,20 +216,37 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 	 */
 	public void raVerifyConfiguration(ConfigProperties arg0)
 			throws javax.slee.resource.InvalidConfigurationException {
-		ConfigProperties.Property property = arg0
-				.getProperty(NAME_CONFIG_PROPERTY);
-		if (property == null) {
+		ConfigProperties.Property nameProperty = arg0.getProperty(NAME_CONFIG_PROPERTY);
+		
+		if (nameProperty == null) {
 			throw new InvalidConfigurationException("name property not found");
 		}
-		if (!property.getType().equals(String.class.getName())) {
+		
+		if (!nameProperty.getType().equals(String.class.getName())) {
 			throw new InvalidConfigurationException(
 					"name property must be of type java.lang.String");
 		}
-		if (property.getValue() == null) {
+		if (nameProperty.getValue() == null) {
 			// don't think this can happen, but just to be sure
 			throw new InvalidConfigurationException(
 					"name property must not have a null value");
 		}
+		
+		ConfigProperties.Property httpTimeoutProperty = arg0.getProperty(CFG_PROPERTY_HTTP_REQUEST_TIMEOUT);
+		if (httpTimeoutProperty == null) {
+            throw new InvalidConfigurationException("HTTP_REQUEST_TIMEOUT property not found");
+        }
+		
+		if (!httpTimeoutProperty.getType().equals(Integer.class.getName())) {
+            throw new InvalidConfigurationException(
+                    "HTTP_REQUEST_TIMEOUT property must be of type java.lang.Integer");
+        }
+		
+		if (httpTimeoutProperty.getValue() == null) {
+            // don't think this can happen, but just to be sure
+            throw new InvalidConfigurationException(
+                    "HTTP_REQUEST_TIMEOUT property must not have a null value");
+        }
 	};
 
 	/*
@@ -476,7 +498,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 			// create request activity
 			activity = new HttpServletRequestActivityImpl();
 		} else {
-			activity = new HttpSessionActivityImpl(session.getId());
+			activity = new HttpSessionActivityImpl(session);
 			if (session.getResourceEntryPoint() != null) {
 				createActivity = false;
 			}
@@ -512,7 +534,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 						null, EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK);
 				// block thread until event has been processed
 				// otherwise jboss web replies to the request
-				lock.wait(15000);
+				lock.wait(this.httpRequestTimeout);
 				// the event was unreferenced or 15s timeout, if the activity is
 				// the request then end it
 				if (session == null) {
@@ -542,8 +564,8 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 	 * @seeorg.mobicents.slee.resource.http.HttpServletResourceEntryPoint#
 	 * onSessionTerminated(java.lang.String)
 	 */
-	public void onSessionTerminated(String sessionId) {
-		endActivity(new HttpSessionActivityImpl(sessionId));
+	public void onSessionTerminated(HttpSessionWrapper httpSessionWrapper) {
+		endActivity(new HttpSessionActivityImpl(httpSessionWrapper));
 	}
 
 }

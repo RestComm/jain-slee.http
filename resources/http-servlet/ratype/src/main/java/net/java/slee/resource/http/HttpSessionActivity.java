@@ -45,5 +45,8 @@ public interface HttpSessionActivity {
 	 */
 	public String getSessionId();
 	
-
+	/**
+	 * Ends the underlying Activiity and invalidates the HttpSession
+	 */
+	public void endActivity();
 }

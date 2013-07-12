@@ -10,6 +10,9 @@
 	<title>Configuration</title>
 
 	<para>The Resource Adaptor supports configuration only at Resource Adaptor Entity creation time. The following table enumerates the configuration properties:</para>
+  	<important>
+		<para>Spaces are introduced in <literal>Property Name</literal> column value, to correctly render the table. Please remove them when using copy/paste.</para>
+	</important>
   <table frame="all" pgwide="1">
     <title>Resource Adaptor&apos;s Configuration Properties</title>
     <tgroup cols="4" colsep="1">
@@ -27,22 +30,22 @@
       </thead>
       <tbody>
         <row>
-          <entry>HTTP_CLIENT_FACTORY</entry>
+          <entry>HTTP_CLIENT _FACTORY</entry>
           <entry>May be used to provide a class which is responsible for building the HTTP Client. If used the other properties are irrelevant.</entry>
           <entry>java.lang.String</entry>
           <entry/>
         </row>
         <row>
-          <entry>MAX_CONNECTIONS_TOTAL</entry>
+          <entry>MAX_CONNECTIONS _TOTAL</entry>
           <entry>Max total concurrent connections.</entry>
           <entry>java.lang.String</entry>
           <entry>1000</entry>
         </row>
         <row>
-          <entry>MAX_CONNECTIONS_FOR_ROUTES</entry>
-          <entry>Configures the client to override default limit of max concurrent connections for routes, must be a list of hostname:maxConcurrentConnections elements, separated by commas.</entry>
+          <entry>MAX_CONNECTIONS _FOR_ROUTES</entry>
+          <entry>Configures the client to override default limit of max concurrent connections for routes, must be a list of scheme:host:port:maxConcurrentConnectionsForRoute elements, separated by commas.</entry>
           <entry>java.lang.String</entry>
-          <entry></entry>
+          <entry>http:localhost:8080:500</entry>
         </row>
       </tbody>
     </tgroup>

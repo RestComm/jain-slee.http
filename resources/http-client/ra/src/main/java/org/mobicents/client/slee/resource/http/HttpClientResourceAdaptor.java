@@ -710,7 +710,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
 
     }
 
-    public class IdleConnectionMonitorThread extends Thread {
+    public static class IdleConnectionMonitorThread extends Thread {
 
         private final ClientConnectionManager connMgr;
         private volatile boolean shutdown;

@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.slee.Address;
 import javax.slee.EventTypeID;
@@ -53,6 +54,7 @@ import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
@@ -100,6 +102,8 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
     private int maxTotal;
     private Map<HttpRoute, Integer> maxForRoutes;
     private HttpClientFactory httpClientFactory;
+
+    private IdleConnectionMonitorThread idleConnectionMonitorThread = null;
 
     // LIFECYCLE METHODS
 
@@ -198,14 +202,18 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
             ThreadSafeClientConnManager threadSafeClientConnManager = new ThreadSafeClientConnManager(schemeRegistry);
             threadSafeClientConnManager.setMaxTotal(maxTotal);
             for (Entry<HttpRoute, Integer> entry : maxForRoutes.entrySet()) {
-                if(tracer.isInfoEnabled()){
+                if (tracer.isInfoEnabled()) {
                     tracer.info(String.format("Configuring MaxForRoute %s max %d", entry.getKey(), entry.getValue()));
                 }
                 threadSafeClientConnManager.setMaxForRoute(entry.getKey(), entry.getValue());
             }
             httpclient = new DefaultHttpClient(threadSafeClientConnManager, params);
+
+            this.idleConnectionMonitorThread = new IdleConnectionMonitorThread(threadSafeClientConnManager);
+            this.idleConnectionMonitorThread.start();
         }
         isActive = true;
+
         if (tracer.isInfoEnabled()) {
             tracer.info(String.format("HttpClientResourceAdaptor=%s entity activated.",
                     this.resourceAdaptorContext.getEntityName()));
@@ -219,6 +227,10 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
      */
     public void raStopping() {
         this.isActive = false;
+
+        if (this.idleConnectionMonitorThread != null) {
+            this.idleConnectionMonitorThread.shutdown();
+        }
     }
 
     /*
@@ -234,6 +246,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
         executorService = null;
 
         this.httpclient.getConnectionManager().shutdown();
+        this.idleConnectionMonitorThread = null;
 
         this.httpclient = null;
     }
@@ -692,6 +705,42 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
                 } finally {
                     ((HttpClientActivityImpl) this.activity).setEnded(true);
                 }
+            }
+        }
+
+    }
+
+    public class IdleConnectionMonitorThread extends Thread {
+
+        private final ClientConnectionManager connMgr;
+        private volatile boolean shutdown;
+
+        public IdleConnectionMonitorThread(ClientConnectionManager connMgr) {
+            super();
+            this.connMgr = connMgr;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!shutdown) {
+                    synchronized (this) {
+                        wait(5000);
+
+                        // close connections that have been idle longer than 30
+                        // sec
+                        connMgr.closeIdleConnections(30, TimeUnit.SECONDS);
+                    }
+                }
+            } catch (InterruptedException ex) {
+                // terminate
+            }
+        }
+
+        public void shutdown() {
+            shutdown = true;
+            synchronized (this) {
+                notifyAll();
             }
         }
 

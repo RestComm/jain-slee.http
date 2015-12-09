@@ -27,7 +27,7 @@
       </thead>
       <tbody>
         <row>
-          <entry>HTTP_CLIENT_FACTORY</entry>
+          <entry>HTTP_CLIENT_ FACTORY</entry>
           <entry>May be used to provide a class which is responsible for building the HTTP Client.</entry>
           <entry>java.lang.String</entry>
           <entry/>

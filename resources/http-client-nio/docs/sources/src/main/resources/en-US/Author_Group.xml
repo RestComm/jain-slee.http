@@ -8,11 +8,11 @@
 	<author>
 		<firstname>Charles</firstname>
 		<surname>Roufay</surname>
-		<email>&AUTHOR_EMAIL_CHARLES;</email>
+		<email>&AUTHOR.EMAIL.CHARLES;</email>
 	</author>
 	<author>
 		<firstname>Eduardo</firstname>
 		<surname>Martins</surname>
-		<email>&AUTHOR_EMAIL_EDUARDO;</email>
+		<email>&AUTHOR.EMAIL.EDUARDO;</email>
 	</author>
 </authorgroup>

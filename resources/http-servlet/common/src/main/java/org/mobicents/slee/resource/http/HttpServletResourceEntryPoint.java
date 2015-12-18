@@ -39,6 +39,6 @@ public interface HttpServletResourceEntryPoint {
 	
 	public void onRequest(HttpServletRequest request, HttpServletResponse response);
 	
-	public void onSessionTerminated(String sessionId);
+	public void onSessionTerminated(HttpSessionWrapper httpSessionWrapper);
 
 }

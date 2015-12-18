@@ -476,7 +476,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 			// create request activity
 			activity = new HttpServletRequestActivityImpl();
 		} else {
-			activity = new HttpSessionActivityImpl(session.getId());
+			activity = new HttpSessionActivityImpl(session);
 			if (session.getResourceEntryPoint() != null) {
 				createActivity = false;
 			}
@@ -542,8 +542,8 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor,
 	 * @seeorg.mobicents.slee.resource.http.HttpServletResourceEntryPoint#
 	 * onSessionTerminated(java.lang.String)
 	 */
-	public void onSessionTerminated(String sessionId) {
-		endActivity(new HttpSessionActivityImpl(sessionId));
+	public void onSessionTerminated(HttpSessionWrapper httpSessionWrapper) {
+		endActivity(new HttpSessionActivityImpl(httpSessionWrapper));
 	}
 
 }

@@ -44,6 +44,12 @@ public interface HttpSessionActivity {
 	 * @return Session ID
 	 */
 	public String getSessionId();
+
+	/**
+	*  End HttpSession activity
+	*/
+
+	public void endActivity();
 	
 
 }

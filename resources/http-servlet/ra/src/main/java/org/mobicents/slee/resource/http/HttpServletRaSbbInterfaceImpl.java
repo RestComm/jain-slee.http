@@ -69,7 +69,7 @@ public class HttpServletRaSbbInterfaceImpl implements HttpServletRaSbbInterface 
 			throw new IllegalArgumentException();
 		}
 		final HttpSessionWrapper httpSessionWrapper = (HttpSessionWrapper) httpSession;
-		final HttpSessionActivityImpl activity = new HttpSessionActivityImpl(httpSession.getId());
+		final HttpSessionActivityImpl activity = new HttpSessionActivityImpl(httpSessionWrapper);
 		if (httpSessionWrapper.getResourceEntryPoint() == null) {
 			ra.getSleeEndpoint().startActivitySuspended(activity,activity);
 			httpSessionWrapper.setResourceEntryPoint(ra.getName());

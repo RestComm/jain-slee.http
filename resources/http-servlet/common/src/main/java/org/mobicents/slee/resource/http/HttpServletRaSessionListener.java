@@ -81,7 +81,7 @@ public class HttpServletRaSessionListener implements HttpSessionListener {
 			if (name != null) {
 				HttpServletResourceEntryPoint resourceEntryPoint = HttpServletResourceEntryPointManager.getResourceEntryPoint(name);
 				if (resourceEntryPoint != null) {
-					resourceEntryPoint.onSessionTerminated(session.getId());
+					resourceEntryPoint.onSessionTerminated(wrapper);
 				}
 			}
 		}

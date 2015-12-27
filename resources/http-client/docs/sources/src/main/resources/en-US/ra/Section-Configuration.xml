@@ -27,20 +27,20 @@
       </thead>
       <tbody>
         <row>
-          <entry>HTTP_CLIENT_FACTORY</entry>
+          <entry>HTTP_CLIENT_ FACTORY</entry>
           <entry>May be used to provide a class which is responsible for building the HTTP Client. If used the other properties are irrelevant.</entry>
           <entry>java.lang.String</entry>
           <entry/>
         </row>
         <row>
-          <entry>MAX_CONNECTIONS_TOTAL</entry>
+          <entry>MAX_CONNECTIONS _TOTAL</entry>
           <entry>Max total concurrent connections.</entry>
           <entry>java.lang.String</entry>
           <entry>1000</entry>
         </row>
         <row>
-          <entry>MAX_CONNECTIONS_FOR_ROUTES</entry>
-          <entry>Configures the client to override default limit of max concurrent connections for routes, must be a list of hostname:maxConcurrentConnections elements, separated by commas.</entry>
+          <entry>MAX_CONNECTIONS _FOR_ROUTES</entry>
+          <entry>Configures the client to override default limit of max concurrent connections for routes, must be a list of hostname:max ConcurrentConnections elements, separated by commas.</entry>
           <entry>java.lang.String</entry>
           <entry></entry>
         </row>

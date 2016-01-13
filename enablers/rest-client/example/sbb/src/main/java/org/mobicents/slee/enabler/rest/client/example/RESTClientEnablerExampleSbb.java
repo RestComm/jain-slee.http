@@ -63,7 +63,7 @@ public abstract class RESTClientEnablerExampleSbb implements Sbb,
 	private SbbContextExt sbbContext;
 	private Tracer tracer;
 
-	private static final String twitterStatusUpdateBaseURI = "http://api.twitter.com/1/statuses/update.json?status=";
+	private static final String twitterStatusUpdateBaseURI = "https://api.twitter.com/1.1/statuses/update.json?status=";
 
 	private CommonsHttpOAuthConsumer consumer;
 

@@ -8,7 +8,7 @@
 	</parent>
 
 	<artifactId>http-servlet-ra-DU</artifactId>
-	<name>Mobicents :: Resources :: ${pom.artifactId}</name>
+	<name>Restcomm :: Resources :: ${pom.artifactId}</name>
 
 	<dependencies>
 		<!-- components -->
@@ -30,7 +30,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>mobicents-slee-ra-http-servlet-DU-${project.version}</finalName>
+		<finalName>restcomm-slee-ra-http-servlet-DU-${project.version}</finalName>
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>

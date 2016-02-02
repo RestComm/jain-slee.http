@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [<!ENTITY % BOOK_ENTITIES SYSTEM "../User_Guide.ent">%BOOK_ENTITIES;]>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "../User_Guide.ent">
+%BOOK_ENTITIES;
+]>
 
 <section id="ratype_sbb_code_examples">
 
@@ -57,10 +60,10 @@
 			if (httpServletRaSbbInterface == null) {
 				Context myEnv = (Context) new InitialContext().lookup("java:comp/env"); 
 	        	httpServletRaSbbInterface = (HttpServletRaSbbInterface) myEnv.lookup(
-	        		"slee/resources/mobicents/httpservlet/sbbrainterface");
+	        		"slee/resources/restcomm/httpservlet/sbbrainterface");
 	        	httpServletRaActivityContextInterfaceFactory = 
 	        		(HttpServletRaActivityContextInterfaceFactory) myEnv.lookup(
-	        			"slee/resources/mobicents/httpservlet/acifactory");
+	        			"slee/resources/restcomm/httpservlet/acifactory");
 			}
 			HttpSession httpSession = event.getRequest().getSession();
 			HttpSessionActivity httpSessionActivity = httpServletRaSbbInterface

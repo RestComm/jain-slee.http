@@ -8,7 +8,7 @@
 	</parent>
 	
 	<artifactId>http-servlet-events</artifactId>
-	<name>Mobicents :: Resources :: ${pom.artifactId}</name>
+	<name>Restcomm :: Resources :: ${pom.artifactId}</name>
 	
 	<dependencies>
 		<dependency>

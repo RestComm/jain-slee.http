@@ -10,7 +10,7 @@
 
 	<artifactId>http-client-library</artifactId>
 
-	<name>Mobicents :: Resources :: ${pom.artifactId}</name>
+	<name>Restcomm :: Resources :: ${pom.artifactId}</name>
 
 	<dependencies>
 		<dependency>

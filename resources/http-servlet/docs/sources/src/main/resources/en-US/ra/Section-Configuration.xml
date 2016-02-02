@@ -31,7 +31,7 @@
 			   		<entry>name</entry>
 			   	    <entry>the servlet name which the RA entity should use</entry>
 			   	    <entry>java.lang.String</entry>
-			   	    <entry>mobicents</entry>
+			   	    <entry>restcomm</entry>
 			    </row>	    
 			</tbody>
 	 	</tgroup>

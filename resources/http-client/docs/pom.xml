@@ -9,14 +9,14 @@
 		<version>2.8.0-SNAPSHOT</version>
 	</parent>
 	
-	<artifactId>mobicents-slee-ra-http-client-docs</artifactId>
+	<artifactId>restcomm-slee-ra-http-client-docs</artifactId>
 		
 	<packaging>pom</packaging>
 	
 	<modules>
 		<module>sources</module>
-		<module>sources-mobicents</module>
-		<module>jdocbook-mobicents</module>		
+		<module>sources-restcomm</module>
+		<module>jdocbook-restcomm</module>		
 	</modules>
 
 </project>

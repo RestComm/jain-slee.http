@@ -4,21 +4,21 @@
 	<modelVersion>4.0.0</modelVersion>
 	
 	<parent>
-		<artifactId>mobicents-slee-ra-http-client-docs</artifactId>
-		<groupId>org.mobicents.resources</groupId>
+		<artifactId>slee-ra-http-client-nio-docs</artifactId>
+		<groupId>org.mobicents.slee.ra</groupId>
 		<version>2.8.0-SNAPSHOT</version>
 	</parent>
 	
-	<artifactId>mobicents-slee-ra-http-client-docs-sources-mobicents</artifactId>	
+	<artifactId>slee-ra-http-client-nio-docs-sources-restcomm</artifactId>	
 			
 	<properties>
-		<THIS.PLATFORM>Mobicents</THIS.PLATFORM>
+		<THIS.PLATFORM>Restcomm</THIS.PLATFORM>
 		<JEE.PLATFORM>JBoss Application Server</JEE.PLATFORM>
 		<THIS.ISSUE_TRACKER_URL>http://code.google.com/p/jain-slee/issues/list</THIS.ISSUE_TRACKER_URL>
 		<THIS.PACKAGE_NAME>http</THIS.PACKAGE_NAME>
 		<THIS.SOURCE_CODE_URL>https://code.google.com/p/jain-slee.${THIS.PACKAGE_NAME}/</THIS.SOURCE_CODE_URL>
 		<author.email.eduardo>emmartins (at) gmail.com</author.email.eduardo>
-		<author.email.amit>amit.bhayani (at) gmail.com</author.email.amit>		
+		<author.email.charles>FIXME</author.email.charles>		
 	</properties>
 	
 	<build>
@@ -43,7 +43,7 @@
 							<artifactItems>
 								<artifactItem>
 									<groupId>${pom.groupId}</groupId>
-									<artifactId>mobicents-slee-ra-http-client-docs-sources</artifactId>
+									<artifactId>slee-ra-http-client-nio-docs-sources</artifactId>
 									<version>${pom.version}</version>
 									<type>jar</type>
 									<overWrite>true</overWrite>

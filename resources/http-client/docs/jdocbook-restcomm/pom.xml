@@ -1,11 +1,13 @@
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	
 	<parent>
-		<artifactId>mobicents-slee-ra-http-servlet-docs</artifactId>
+		<artifactId>restcomm-slee-ra-http-client-docs</artifactId>
 		<groupId>org.mobicents.resources</groupId>
 		<version>2.8.0-SNAPSHOT</version>
 	</parent>
 	
-	<artifactId>mobicents-slee-ra-http-servlet-docs-jdocbook-mobicents</artifactId>
+	<artifactId>restcomm-slee-ra-http-client-docs-jdocbook-restcomm</artifactId>
 			
 	<modelVersion>4.0.0</modelVersion>
 		
@@ -28,7 +30,7 @@
 								<configuration>
 									<tasks>
 										<!-- copy docs -->
-										<copy overwrite="true" todir="${release.dir}/docs/resources/http-servlet/user-guide">
+										<copy overwrite="true" todir="${release.dir}/docs/resources/http-client/user-guide">
 											<fileset dir="${basedir}/target/docbook/publish" />
 										</copy>
 									</tasks>
@@ -57,7 +59,7 @@
 							<artifactItems>								
 								<artifactItem>
 									<groupId>${pom.groupId}</groupId>
-									<artifactId>mobicents-slee-ra-http-servlet-docs-sources-mobicents</artifactId>
+									<artifactId>restcomm-slee-ra-http-client-docs-sources-restcomm</artifactId>
 									<version>${pom.version}</version>
 									<type>jar</type>
 									<overWrite>true</overWrite>
@@ -99,7 +101,7 @@
 						<format>
 							<formatName>pdf</formatName>
 							<stylesheetResource>classpath:/xslt/org/jboss/pdf.xsl</stylesheetResource>
-							<finalName>Mobicents_SLEE_RA_HTTP_Servlet_User_Guide.pdf</finalName>
+							<finalName>Restcomm_SLEE_RA_HTTP_Client_User_Guide.pdf</finalName>
 						</format>
 						<format>
 							<formatName>html</formatName>

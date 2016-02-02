@@ -9,7 +9,7 @@
 	</parent>
 
 	<artifactId>http-servlet-ra-release</artifactId>
-	<name>Mobicents :: Resources :: ${pom.artifactId}</name>
+	<name>Restcomm :: Resources :: ${pom.artifactId}</name>
 
 	<profiles>
 		<profile>

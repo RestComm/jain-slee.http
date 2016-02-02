@@ -4,12 +4,12 @@
 	<packaging>pom</packaging>
 	
 	<parent>
-		<artifactId>mobicents-slee-enabler-rest-client</artifactId>
+		<artifactId>restcomm-slee-enabler-rest-client</artifactId>
 		<groupId>org.mobicents.servers.jainslee.enablers</groupId>
 		<version>2.8.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>mobicents-slee-enabler-rest-client-release</artifactId>
+	<artifactId>restcomm-slee-enabler-rest-client-release</artifactId>
 			
 	<profiles>
 		<profile>

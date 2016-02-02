@@ -1,1 +1,1 @@
-Mobicents.SLEE.RA.HttpServlet.Common
+Restcomm.SLEE.RA.HttpServlet.Common

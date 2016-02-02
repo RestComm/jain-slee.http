@@ -27,11 +27,11 @@
 				</resource-adaptor-type-version>
 			</resource-adaptor-type-ref>
 			<activity-context-interface-factory-name>
-				slee/resources/mobicents/httpservlet/acifactory
+				slee/resources/restcomm/httpservlet/acifactory
             </activity-context-interface-factory-name>
 			<resource-adaptor-entity-binding>
 				<resource-adaptor-object-name>
-					slee/resources/mobicents/httpservlet/sbbrainterface
+					slee/resources/restcomm/httpservlet/sbbrainterface
 				</resource-adaptor-object-name>
 				<resource-adaptor-entity-link>
 					HttpServletRA

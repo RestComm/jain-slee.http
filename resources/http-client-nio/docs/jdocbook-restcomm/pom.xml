@@ -7,7 +7,7 @@
 		<version>2.8.0-SNAPSHOT</version>
 	</parent>
 	
-	<artifactId>slee-ra-http-client-nio-docs-jdocbook-mobicents</artifactId>
+	<artifactId>slee-ra-http-client-nio-docs-jdocbook-restcomm</artifactId>
 			
 	<modelVersion>4.0.0</modelVersion>
 		
@@ -59,7 +59,7 @@
 							<artifactItems>								
 								<artifactItem>
 									<groupId>${pom.groupId}</groupId>
-									<artifactId>slee-ra-http-client-nio-docs-sources-mobicents</artifactId>
+									<artifactId>slee-ra-http-client-nio-docs-sources-restcomm</artifactId>
 									<version>${pom.version}</version>
 									<type>jar</type>
 									<overWrite>true</overWrite>
@@ -101,7 +101,7 @@
 						<format>
 							<formatName>pdf</formatName>
 							<stylesheetResource>classpath:/xslt/org/jboss/pdf.xsl</stylesheetResource>
-							<finalName>Mobicents_SLEE_RA_HTTP_Client_NIO_User_Guide.pdf</finalName>
+							<finalName>Restcomm_SLEE_RA_HTTP_Client_NIO_User_Guide.pdf</finalName>
 						</format>
 						<format>
 							<formatName>html</formatName>

@@ -104,13 +104,13 @@ public abstract class RESTClientEnablerExampleSbb implements Sbb,
 
 	public void onServiceStartedEvent(ServiceStartedEvent event,
 			ActivityContextInterface aci) {
-		tracer.info("Mobicents SLEE REST Client Enabler Example service activation.");
+		tracer.info("Restcomm SLEE REST Client Enabler Example service activation.");
 		try {
 			RESTClientEnablerChild child = (RESTClientEnablerChild) getChildRelation()
 					.create(ChildRelationExt.DEFAULT_CHILD_NAME);
 			String uri = twitterStatusUpdateBaseURI
 					+ URLEncoder.encode(
-							"Mobicents SLEE REST Client Application Enabler Example ACTIVATED - "
+							"Restcomm SLEE REST Client Application Enabler Example ACTIVATED - "
 									+ new Date(), "UTF-8");
 			RESTClientEnablerRequest request = new RESTClientEnablerRequest(
 					RESTClientEnablerRequest.Type.POST, uri)
@@ -123,13 +123,13 @@ public abstract class RESTClientEnablerExampleSbb implements Sbb,
 
 	public void onActivityEndEvent(ActivityEndEvent event,
 			ActivityContextInterface aci) {
-		tracer.info("Mobicents SLEE REST Client Enabler Example service deactivation.");
+		tracer.info("Restcomm SLEE REST Client Enabler Example service deactivation.");
 		try {
 			RESTClientEnablerChild child = (RESTClientEnablerChild) getChildRelation()
 					.get(ChildRelationExt.DEFAULT_CHILD_NAME);
 			String uri = twitterStatusUpdateBaseURI
 					+ URLEncoder.encode(
-							"Mobicents SLEE REST Client Application Enabler Example DEACTIVATED - "
+							"Restcomm SLEE REST Client Application Enabler Example DEACTIVATED - "
 									+ new Date(), "UTF-8");
 			RESTClientEnablerRequest request = new RESTClientEnablerRequest(
 					RESTClientEnablerRequest.Type.POST, uri)

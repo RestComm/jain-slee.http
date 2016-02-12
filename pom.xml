@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.mobicents</groupId>
-		<artifactId>restcomm-parent</artifactId>
-		<version>2.27.32</version>
+		<groupId>org.mobicents.servers.jainslee</groupId>
+		<artifactId>restcomm-slee-parent</artifactId>
+		<version>2.8.1</version>
 	</parent>
 
 	<groupId>org.mobicents.servers.jainslee.http</groupId>
@@ -58,9 +58,9 @@
 	</dependencyManagement>
 
 	<scm>
-		<connection>scm:git:https://code.google.com/p/jain-slee.http/</connection>
-		<developerConnection>scm:git:https://code.google.com/p/jain-slee.http/</developerConnection>
-		<url>https://code.google.com/p/jain-slee.http/</url>
+		<connection>scm:git:https://github.com/RestComm/jain-slee.http.git</connection>
+		<developerConnection>scm:git:git@github.com:RestComm/jain-slee.http.git</developerConnection>
+		<url>https://github.com/RestComm/jain-slee.http</url>
 	</scm>
 
 	<profiles>

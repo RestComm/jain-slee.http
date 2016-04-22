@@ -19,7 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.mobicents.slee.resource.http;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,505 +44,453 @@ import net.java.slee.resource.http.events.HttpServletRequestEvent;
 import org.mobicents.slee.resource.http.events.HttpServletRequestEventImpl;
 
 /**
- * 
+ *
  * @author martins
  *
  */
-public class HttpServletResourceAdaptor implements ResourceAdaptor,
-		HttpServletResourceEntryPoint {
+public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletResourceEntryPoint {
 
-	private Tracer logger;
+    private static final String NAME_CONFIG_PROPERTY = "name";
+    private ResourceAdaptorContext resourceAdaptorContext;
+    private SleeEndpoint sleeEndpoint;
+    private Tracer tracer;
 
-	private ResourceAdaptorContext resourceAdaptorContext;
+    /**
+     * the EventLookupFacility is used to look up the event id of incoming events
+     */
+    private EventLookupFacility eventLookup;
 
-	private SleeEndpoint sleeEndpoint;
+    private RequestLock requestLock;
 
-	/**
-	 * the EventLookupFacility is used to look up the event id of incoming
-	 * events
-	 */
-	private EventLookupFacility eventLookup;
+    private HttpServletRaSbbInterfaceImpl httpRaSbbinterface;
 
-	private RequestLock requestLock;
+    /**
+     * caches the eventIDs, avoiding lookup in container
+     */
+    private EventIDCache eventIdCache;
 
-	private HttpServletRaSbbInterfaceImpl httpRaSbbinterface;
+    /**
+     * tells the RA if an event with a specified ID should be filtered or not
+     */
+    private EventIDFilter eventIDFilter;
 
-	/**
-	 * caches the eventIDs, avoiding lookup in container
-	 */
-	private EventIDCache eventIdCache;
+    /**
+     * the ra entity name, which matches the servlet name
+     */
+    private String name;
 
-	/**
-	 * tells the RA if an event with a specified ID should be filtered or not
-	 */
-	private EventIDFilter eventIDFilter;
+    /**
+     *
+     */
+    public HttpServletResourceAdaptor() {
+    }
 
-	/**
-	 * the ra entity name, which matches the servlet name
-	 */
-	private String name;
+    /**
+     *
+     * @return
+     */
+    public ResourceAdaptorContext getResourceAdaptorContext() {
+        return resourceAdaptorContext;
+    }
 
-	private static final String NAME_CONFIG_PROPERTY = "name";
+    /**
+     *
+     * @return
+     */
+    public SleeEndpoint getSleeEndpoint() {
+        return sleeEndpoint;
+    }
 
-	/**
-	 * 
-	 */
-	public HttpServletResourceAdaptor() {
-	}
+    /**
+     *
+     * @return
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * 
-	 * @return
-	 */
-	public ResourceAdaptorContext getResourceAdaptorContext() {
-		return resourceAdaptorContext;
-	}
+    // lifecycle methods
 
-	/**
-	 * 
-	 * @return
-	 */
-	public SleeEndpoint getSleeEndpoint() {
-		return sleeEndpoint;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#setResourceAdaptorContext(javax.slee.resource.ResourceAdaptorContext)
+     */
+    public void setResourceAdaptorContext(ResourceAdaptorContext raContext) {
+        this.resourceAdaptorContext = raContext;
+        tracer = raContext.getTracer(HttpServletResourceAdaptor.class.getSimpleName());
+        eventIdCache = new EventIDCache(raContext.getTracer(EventIDCache.class.getSimpleName()));
+        eventIDFilter = new EventIDFilter();
+        sleeEndpoint = raContext.getSleeEndpoint();
+        eventLookup = raContext.getEventLookupFacility();
+        requestLock = new RequestLock();
+        httpRaSbbinterface = new HttpServletRaSbbInterfaceImpl(this);
+    }
 
-	/**
-	 * 
-	 * @return
-	 */
-	public String getName() {
-		return name;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raConfigure(javax.slee.resource.ConfigProperties)
+     */
+    public void raConfigure(ConfigProperties configProperties) {
+        name = (String) configProperties.getProperty(NAME_CONFIG_PROPERTY).getValue();
+    }
 
-	// lifecycle methods
+    /*
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raActive()
+     */
+    public void raActive() {
+        // register in manager
+        HttpServletResourceEntryPointManager.putResourceEntryPoint(name, this);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#setResourceAdaptorContext(javax.slee
-	 * .resource.ResourceAdaptorContext)
-	 */
-	public void setResourceAdaptorContext(ResourceAdaptorContext arg0) {
-		resourceAdaptorContext = arg0;
-		logger = arg0.getTracer(HttpServletResourceAdaptor.class
-				.getSimpleName());
-		eventIdCache = new EventIDCache(arg0.getTracer(EventIDCache.class
-				.getSimpleName()));
-		eventIDFilter = new EventIDFilter();
-		sleeEndpoint = arg0.getSleeEndpoint();
-		eventLookup = arg0.getEventLookupFacility();
-		requestLock = new RequestLock();
-		httpRaSbbinterface = new HttpServletRaSbbInterfaceImpl(this);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raStopping()
+     */
+    public void raStopping() {
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @seejavax.slee.resource.ResourceAdaptor#raConfigure(javax.slee.resource.
-	 * ConfigProperties)
-	 */
-	public void raConfigure(ConfigProperties arg0) {
-		name = (String) arg0.getProperty(NAME_CONFIG_PROPERTY).getValue();
-	}
+    /*
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raInactive()
+     */
+    public void raInactive() {
+        // unregister from manager
+        HttpServletResourceEntryPointManager.removeResourceEntryPoint(name);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raActive()
-	 */
-	public void raActive() {
-		// register in manager
-		HttpServletResourceEntryPointManager.putResourceEntryPoint(name, this);
-	}
+    /*
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raUnconfigure()
+     */
+    public void raUnconfigure() {
+        name = null;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raStopping()
-	 */
-	public void raStopping() {
-	}
+    /*
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#unsetResourceAdaptorContext()
+     */
+    public void unsetResourceAdaptorContext() {
+        resourceAdaptorContext = null;
+        tracer = null;
+        eventIdCache = null;
+        eventIDFilter = null;
+        sleeEndpoint = null;
+        eventLookup = null;
+        requestLock = null;
+        httpRaSbbinterface = null;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raInactive()
-	 */
-	public void raInactive() {
-		// unregister from manager
-		HttpServletResourceEntryPointManager.removeResourceEntryPoint(name);
-	}
+    // config management methods
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#raUnconfigure()
-	 */
-	public void raUnconfigure() {
-		name = null;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raVerifyConfiguration(javax.slee.resource.ConfigProperties)
+     */
+    public void raVerifyConfiguration(ConfigProperties configProperties) throws InvalidConfigurationException {
+        ConfigProperties.Property property = configProperties.getProperty(NAME_CONFIG_PROPERTY);
+        if (property == null) {
+            throw new InvalidConfigurationException("name property not found");
+        }
+        if (!property.getType().equals(String.class.getName())) {
+            throw new InvalidConfigurationException("name property must be of type java.lang.String");
+        }
+        if (property.getValue() == null) {
+            // don't think this can happen, but just to be sure
+            throw new InvalidConfigurationException("name property must not have a null value");
+        }
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#unsetResourceAdaptorContext()
-	 */
-	public void unsetResourceAdaptorContext() {
-		resourceAdaptorContext = null;
-		logger = null;
-		eventIdCache = null;
-		eventIDFilter = null;
-		sleeEndpoint = null;
-		eventLookup = null;
-		requestLock = null;
-		httpRaSbbinterface = null;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#raConfigurationUpdate(javax.slee.resource.ConfigProperties)
+     */
+    public void raConfigurationUpdate(ConfigProperties configProperties) {
+        throw new UnsupportedOperationException();
+    }
 
-	// config management methods
+    // event filtering methods
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#raVerifyConfiguration(javax.slee.
-	 * resource.ConfigProperties)
-	 */
-	public void raVerifyConfiguration(ConfigProperties arg0)
-			throws javax.slee.resource.InvalidConfigurationException {
-		ConfigProperties.Property property = arg0
-				.getProperty(NAME_CONFIG_PROPERTY);
-		if (property == null) {
-			throw new InvalidConfigurationException("name property not found");
-		}
-		if (!property.getType().equals(String.class.getName())) {
-			throw new InvalidConfigurationException(
-					"name property must be of type java.lang.String");
-		}
-		if (property.getValue() == null) {
-			// don't think this can happen, but just to be sure
-			throw new InvalidConfigurationException(
-					"name property must not have a null value");
-		}
-	};
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#serviceActive(javax.slee.resource.ReceivableService)
+     */
+    public void serviceActive(ReceivableService receivableService) {
+        eventIDFilter.serviceActive(receivableService);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#raConfigurationUpdate(javax.slee.
-	 * resource.ConfigProperties)
-	 */
-	public void raConfigurationUpdate(ConfigProperties arg0) {
-		throw new UnsupportedOperationException();
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#serviceStopping(javax.slee.resource.ReceivableService)
+     */
+    public void serviceStopping(ReceivableService receivableService) {
+        eventIDFilter.serviceStopping(receivableService);
+    }
 
-	// event filtering methods
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#serviceInactive(javax.slee.resource.ReceivableService)
+     */
+    public void serviceInactive(ReceivableService receivableService) {
+        eventIDFilter.serviceInactive(receivableService);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#serviceActive(javax.slee.resource
-	 * .ReceivableService)
-	 */
-	public void serviceActive(ReceivableService arg0) {
-		eventIDFilter.serviceActive(arg0);
-	}
+    // mandatory callbacks
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#serviceStopping(javax.slee.resource
-	 * .ReceivableService)
-	 */
-	public void serviceStopping(ReceivableService arg0) {
-		eventIDFilter.serviceStopping(arg0);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#administrativeRemove(javax.slee.resource.ActivityHandle)
+     */
+    public void administrativeRemove(ActivityHandle activityHandle) {
+        // nothing to do
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#serviceInactive(javax.slee.resource
-	 * .ReceivableService)
-	 */
-	public void serviceInactive(ReceivableService arg0) {
-		eventIDFilter.serviceInactive(arg0);
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#getActivity(javax.slee.resource.ActivityHandle)
+     */
+    public Object getActivity(ActivityHandle activityHandle) {
+        return activityHandle;
+    }
 
-	// mandatory callbacks
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#getActivityHandle(java.lang.Object)
+     */
+    public javax.slee.resource.ActivityHandle getActivityHandle(Object object) {
+        return (ActivityHandle) object;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#administrativeRemove(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void administrativeRemove(ActivityHandle arg0) {
-		// nothing to do
-	}
+    // optional callbacks
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @seejavax.slee.resource.ResourceAdaptor#getActivity(javax.slee.resource.
-	 * ActivityHandle)
-	 */
-	public Object getActivity(ActivityHandle activityHandle) {
-		return activityHandle;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#activityEnded(javax.slee.resource.ActivityHandle)
+     */
+    public void activityEnded(ActivityHandle activityHandle) {
+        // not used
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#getActivityHandle(java.lang.Object)
-	 */
-	public javax.slee.resource.ActivityHandle getActivityHandle(Object object) {
-		return (ActivityHandle) object;
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#activityUnreferenced(javax.slee.resource.ActivityHandle)
+     */
+    public void activityUnreferenced(ActivityHandle activityHandle) {
+        // not used
+    }
 
-	// optional callbacks
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#eventProcessingFailed(javax.slee.resource.ActivityHandle,
+     * javax.slee.resource.FireableEventType, java.lang.Object, javax.slee.Address,
+	 * javax.slee.resource.ReceivableService, int, javax.slee.resource.FailureReason)
+     */
+    public void eventProcessingFailed(ActivityHandle activityHandle, FireableEventType fireableEventType,
+            Object object, Address address, ReceivableService receivableService, int integer,
+            FailureReason failureReason) {
+        // not used
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#activityEnded(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void activityEnded(ActivityHandle arg0) {
-		// not used
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#eventProcessingSuccessful(javax.slee.resource.ActivityHandle,
+     * javax.slee.resource.FireableEventType, java.lang.Object, javax.slee.Address,
+     * javax.slee.resource.ReceivableService, int)
+     */
+    public void eventProcessingSuccessful(ActivityHandle activityHandle, FireableEventType fireableEventType,
+            Object object, Address address, ReceivableService receivableService, int integer) {
+        // not used
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#activityUnreferenced(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void activityUnreferenced(ActivityHandle activityHandle) {
-		// not used
-	}
+    /*
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#eventUnreferenced(javax.slee.resource.ActivityHandle,
+     * javax.slee.resource.FireableEventType, java.lang.Object, javax.slee.Address,
+     * javax.slee.resource.ReceivableService, int)
+     */
+    public void eventUnreferenced(ActivityHandle arg0, FireableEventType fireableEventType,
+            Object event, Address address, ReceivableService receivableService, int integer) {
+        // release event thread
+        releaseHttpRequest((HttpServletRequestEvent) event);
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#eventProcessingFailed(javax.slee.
-	 * resource.ActivityHandle, javax.slee.resource.FireableEventType,
-	 * java.lang.Object, javax.slee.Address,
-	 * javax.slee.resource.ReceivableService, int,
-	 * javax.slee.resource.FailureReason)
-	 */
-	public void eventProcessingFailed(ActivityHandle arg0,
-			FireableEventType arg1, Object arg2, Address arg3,
-			ReceivableService arg4, int arg5, FailureReason arg6) {
-		// not used
-	}
+    /**
+     * Allows control to be returned back to the servlet conainer, which delivered the http request. The container will
+     * mandatory close the response stream.
+     *
+     */
+    private void releaseHttpRequest(HttpServletRequestEvent hreqEvent) {
+        if (tracer.isFinestEnabled()) {
+            tracer.finest("releaseHttpRequest() enter");
+        }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#eventProcessingSuccessful(javax.slee
-	 * .resource.ActivityHandle, javax.slee.resource.FireableEventType,
-	 * java.lang.Object, javax.slee.Address,
-	 * javax.slee.resource.ReceivableService, int)
-	 */
-	public void eventProcessingSuccessful(ActivityHandle arg0,
-			FireableEventType arg1, Object arg2, Address arg3,
-			ReceivableService arg4, int arg5) {
-		// not used
-	}
+        final Object lock = requestLock.removeLock(hreqEvent);
+        if (lock != null) {
+            synchronized (lock) {
+                lock.notify();
+            }
+        }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#eventUnreferenced(javax.slee.resource
-	 * .ActivityHandle, javax.slee.resource.FireableEventType, java.lang.Object,
-	 * javax.slee.Address, javax.slee.resource.ReceivableService, int)
-	 */
-	public void eventUnreferenced(ActivityHandle arg0, FireableEventType arg1,
-			Object event, Address arg3, ReceivableService arg4, int arg5) {
-		// release event thread
-		releaseHttpRequest((HttpServletRequestEvent) event);
-	}
+        if (tracer.isFineEnabled()) {
+            tracer.fine("released lock for http request " + hreqEvent.getId());
+        }
+    }
 
-	/**
-	 * Allows control to be returned back to the servlet conainer, which
-	 * delivered the http request. The container will mandatory close the
-	 * response stream.
-	 * 
-	 */
-	private void releaseHttpRequest(HttpServletRequestEvent hreqEvent) {
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#queryLiveness(javax.slee.resource.ActivityHandle)
+     */
+    public void queryLiveness(javax.slee.resource.ActivityHandle activityHandle) {
+        // end any idle activity, it should be a leak, this is true assuming
+        // that jboss web session timeout is smaller than the container timeout
+        // to invoke this method
+        if (tracer.isInfoEnabled()) {
+            tracer.info("Activity " + activityHandle
+                    + " is idle in the container, terminating.");
+        }
+        endActivity((AbstractHttpServletActivity) activityHandle);
+    }
 
-		if (logger.isFinestEnabled()) {
-			logger.finest("releaseHttpRequest() enter");
-		}
+    // interface accessors
 
-		final Object lock = requestLock.removeLock(hreqEvent);
-		if (lock != null) {
-			synchronized (lock) {
-				lock.notify();
-			}
-		}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#getResourceAdaptorInterface(java.lang.String)
+     */
+    public Object getResourceAdaptorInterface(String arg0) {
+        return httpRaSbbinterface;
+    }
 
-		if (logger.isFineEnabled()) {
-			logger.fine("released lock for http request " + hreqEvent.getId());
-		}
-	}
+    /*
+     * (non-Javadoc)
+     * 
+     * @see javax.slee.resource.ResourceAdaptor#getMarshaler()
+     */
+    public Marshaler getMarshaler() {
+        return null;
+    }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#queryLiveness(javax.slee.resource
-	 * .ActivityHandle)
-	 */
-	public void queryLiveness(javax.slee.resource.ActivityHandle activityHandle) {
-		// end any idle activity, it should be a leak, this is true assuming
-		// that jboss web session timeout is smaller than the container timeout
-		// to invoke this method
-		if (logger.isInfoEnabled()) {
-			logger.info("Activity " + activityHandle
-					+ " is idle in the container, terminating.");
-		}
-		endActivity((AbstractHttpServletActivity) activityHandle);
-	}
+    // ra logic
 
-	// interface accessors
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.mobicents.slee.resource.http.HttpServletResourceEntryPoint#onRequest
+	 * (javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+     */
+    public void onRequest(HttpServletRequest request, HttpServletResponse response) {
+        AbstractHttpServletActivity activity = null;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * javax.slee.resource.ResourceAdaptor#getResourceAdaptorInterface(java.
-	 * lang.String)
-	 */
-	public Object getResourceAdaptorInterface(String arg0) {
-		return httpRaSbbinterface;
-	}
+        final HttpServletRequestWrapper requestWrapper = new HttpServletRequestWrapper(request);
+        final HttpSessionWrapper sessionWrapper = (HttpSessionWrapper) requestWrapper.getSession(false);
+        final HttpServletRequestEvent requestEvent = new HttpServletRequestEventImpl(requestWrapper, response, this);
+        final FireableEventType eventType = eventIdCache.getEventType(eventLookup, requestEvent, sessionWrapper);
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see javax.slee.resource.ResourceAdaptor#getMarshaler()
-	 */
-	public Marshaler getMarshaler() {
-		return null;
-	}
+        response.setStatus(HttpServletResponse.SC_NOT_IMPLEMENTED);
 
-	// ra logic
+        if (eventIDFilter.filterEvent(eventType)) {
+            if (tracer.isInfoEnabled()) {
+                tracer.info("Request event filtered: " + requestEvent);
+            }
+            // dude, get out of here
+            return;
+        }
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * org.mobicents.slee.resource.http.HttpServletResourceEntryPoint#onRequest
-	 * (javax.servlet.http.HttpServletRequest,
-	 * javax.servlet.http.HttpServletResponse)
-	 */
-	public void onRequest(HttpServletRequest request,
-			HttpServletResponse response) {
+        boolean createActivity = true;
+        if (sessionWrapper == null) {
+            // create request activity
+            activity = new HttpServletRequestActivityImpl();
+        } else {
+            activity = new HttpSessionActivityImpl(sessionWrapper);
+            if (sessionWrapper.getResourceEntryPoint() != null) {
+                createActivity = false;
+            }
+        }
 
-		AbstractHttpServletActivity activity = null;
-		
-		final HttpServletRequestWrapper wrapper = new HttpServletRequestWrapper(
-				request);
-		final HttpSessionWrapper session = (HttpSessionWrapper) wrapper
-				.getSession(false);
+        if (createActivity) {
+            // we have a session but its not activity yet, add it
+            try {
+                if (sessionWrapper != null) {
+                    sessionWrapper.setResourceEntryPoint(this.name);
+                }
+                sleeEndpoint.startActivity(activity, activity);
+            } catch (ActivityAlreadyExistsException e) {
+                if (tracer.isFineEnabled()) {
+                    tracer.fine("Failed to add activity " + activity, e);
+                }
+                // proceed, may be due to fail over
+            } catch (Throwable e) {
+                tracer.severe("Failed to add activity " + activity, e);
+                return;
+            }
+        }
 
-		final HttpServletRequestEvent event = new HttpServletRequestEventImpl(
-				wrapper, response, this);
-		final FireableEventType eventType = eventIdCache.getEventType(
-				eventLookup, event, session);
-		if (eventIDFilter.filterEvent(eventType)) {
-			if (logger.isInfoEnabled()) {
-				logger.info("Event filtered: " + event);
-			}
-			// dude, get out of here
-			return;
-		}
+        if (tracer.isFineEnabled()) {
+            tracer.fine("Firing event " + requestEvent + " in activity " + activity);
+        }
 
-		boolean createActivity = true;
-		if (session == null) {
-			// create request activity
-			activity = new HttpServletRequestActivityImpl();
-		} else {
-			activity = new HttpSessionActivityImpl(session);
-			if (session.getResourceEntryPoint() != null) {
-				createActivity = false;
-			}
-		}
+        final Object lock = requestLock.getLock(requestEvent);
+        synchronized (lock) {
+            try {
+                sleeEndpoint.fireEvent(activity, eventType, requestEvent, null, null,
+                        EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK);
+                // block thread until event has been processed
+                lock.wait(15000);
+                // the event was unreferenced or 15s timeout, if the activity is the request then end it
+                if (sessionWrapper == null) {
+                    endActivity(activity);
+                }
+            } catch (Throwable e) {
+                tracer.severe("Failure while firing event " + requestEvent + " on activity " + activity, e);
+            }
+        }
+    }
 
-		if(createActivity)
-		{
-			// we have a session but its not activity yet, add it
-			try {
-				if(session!=null)
-					session.setResourceEntryPoint(this.name);
-				sleeEndpoint.startActivity(activity, activity);
-				
-			} catch (ActivityAlreadyExistsException e) {
-				if (logger.isFineEnabled()) {
-					logger.fine("Failed to add activity " + activity, e);
-				}
-				// proceed, may be due to fail over
-			} catch (Throwable e) {
-				logger.severe("Failed to add activity " + activity, e);
-				return;
-			}
-		}
-		
-		if (logger.isFineEnabled()) {
-			logger.fine("Firing event " + event + " in activity " + activity);
-		}
+    private void endActivity(AbstractHttpServletActivity activity) {
+        if (tracer.isInfoEnabled()) {
+            tracer.fine("Ending activity " + activity);
+        }
+        try {
+            sleeEndpoint.endActivity(activity);
+        } catch (Throwable e) {
+            tracer.severe("Failed to end activity " + activity, e);
+        }
+    }
 
-		final Object lock = requestLock.getLock(event);
-		synchronized (lock) {
-			try {
-				sleeEndpoint.fireEvent(activity, eventType, event, null,
-						null, EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK);
-				// block thread until event has been processed
-				// otherwise jboss web replies to the request
-				lock.wait(15000);
-				// the event was unreferenced or 15s timeout, if the activity is
-				// the request then end it
-				if (session == null) {
-					endActivity(activity);
-				}
-			} catch (Throwable e) {
-				logger.severe("Failure while firing event " + event
-						+ " on activity " + activity, e);
-			}
-		}
-	}
-
-	private void endActivity(AbstractHttpServletActivity activity) {
-		if (logger.isInfoEnabled()) {
-			logger.fine("Ending activity " + activity);
-		}
-		try {
-			sleeEndpoint.endActivity(activity);
-		} catch (Throwable e) {
-			logger.severe("Failed to end activity " + activity, e);
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @seeorg.mobicents.slee.resource.http.HttpServletResourceEntryPoint#
-	 * onSessionTerminated(java.lang.String)
-	 */
-	public void onSessionTerminated(HttpSessionWrapper httpSessionWrapper) {
-		endActivity(new HttpSessionActivityImpl(httpSessionWrapper));
-	}
-
+    /*
+     * (non-Javadoc)
+     * 
+     * @see org.mobicents.slee.resource.http.HttpServletResourceEntryPoint#onSessionTerminated(java.lang.String)
+     */
+    public void onSessionTerminated(HttpSessionWrapper httpSessionWrapper) {
+        endActivity(new HttpSessionActivityImpl(httpSessionWrapper));
+    }
 }

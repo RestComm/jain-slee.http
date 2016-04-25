@@ -19,7 +19,6 @@
  * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
-
 package org.mobicents.slee.resource.http;
 
 import java.io.IOException;
@@ -31,42 +30,39 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * 
+ *
  * Takes incoming Http requests and routes them to the JSLEE HttpServlet RA
- * 
+ *
  * @author Ivelin Ivanov
  * @author martins
  *
  */
 public class HttpServletRaServlet extends HttpServlet {
 
-	private static int HTTP_ERROR_CODE_SERVICE_UNAVAILABLE = 503;
-	
-	private static Logger logger = Logger.getLogger(HttpServletRaServlet.class.getName());
-	
-	private static final long serialVersionUID = 7542822118420702996L;
-		
-	private String servletName = null;
+    private static final int HTTP_ERROR_CODE_SERVICE_UNAVAILABLE = 503;
+    private static final Logger LOGGER = Logger.getLogger(HttpServletRaServlet.class.getName());
+    private static final long serialVersionUID = 7542822118420702996L;
 
-	public void service(HttpServletRequest request, HttpServletResponse response) {
-		if (servletName == null) {
-			servletName = getServletConfig().getServletName();
-		}
-		HttpServletResourceEntryPoint resourceEntryPoint = HttpServletResourceEntryPointManager.getResourceEntryPoint(servletName);
-		if (resourceEntryPoint == null) {
-			replyNotAvailableError(servletName, response);
-		} else {
-			resourceEntryPoint.onRequest(request, response);
-		}
-	}
-	
-	public static void replyNotAvailableError(String name, HttpServletResponse response) {
-		try {
-			response.sendError(HTTP_ERROR_CODE_SERVICE_UNAVAILABLE, "JSLEE Http Servlet RA Entity with name "+name+" is not available");
-		} catch (IOException e) {
-			logger.log(Level.WARNING, "Failed to send 503 response to inform client that RA is not available", e);
-		}
-	}
+    private String servletName = null;
+
+    @Override
+    public void service(HttpServletRequest request, HttpServletResponse response) {
+        if (servletName == null) {
+            servletName = getServletConfig().getServletName();
+        }
+        HttpServletResourceEntryPoint resourceEntryPoint = HttpServletResourceEntryPointManager.getResourceEntryPoint(servletName);
+        if (resourceEntryPoint == null) {
+            replyNotAvailableError(servletName, response);
+        } else {
+            resourceEntryPoint.onRequest(request, response);
+        }
+    }
+
+    public static void replyNotAvailableError(String name, HttpServletResponse response) {
+        try {
+            response.sendError(HTTP_ERROR_CODE_SERVICE_UNAVAILABLE, "JSLEE Http Servlet RA Entity with name " + name + " is not available");
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Failed to send 503 response to inform client that RA is not available", e);
+        }
+    }
 }
-
-

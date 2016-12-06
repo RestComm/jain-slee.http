@@ -34,13 +34,6 @@ public class HttpClientNIOResourceAdaptorSbbInterfaceImpl implements
 				HttpClientNIOResourceAdaptorSbbInterfaceImpl.class.getName());
 	}
 
-	public HttpParams getHttpClientParams() {
-		if (!this.ra.isActive) {
-			throw new IllegalStateException("ra is not in active state");
-		}
-		return ra.httpclient.getParams();
-	}
-
 	public HttpClientNIORequestActivity execute(HttpHost target,
 			HttpRequest request, HttpContext context, Object applicationData)
 			throws SLEEException, StartActivityException {

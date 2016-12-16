@@ -8,7 +8,6 @@ import javax.slee.resource.StartActivityException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 import org.mobicents.slee.ra.httpclient.nio.ratype.HttpClientNIORequestActivity;
 import org.mobicents.slee.ra.httpclient.nio.ratype.HttpClientNIOResourceAdaptorSbbInterface;
@@ -32,13 +31,6 @@ public class HttpClientNIOResourceAdaptorSbbInterfaceImpl implements
 		this.ra = ra;
 		this.tracer = ra.getResourceAdaptorContext().getTracer(
 				HttpClientNIOResourceAdaptorSbbInterfaceImpl.class.getName());
-	}
-
-	public HttpParams getHttpClientParams() {
-		if (!this.ra.isActive) {
-			throw new IllegalStateException("ra is not in active state");
-		}
-		return ra.httpclient.getParams();
 	}
 
 	public HttpClientNIORequestActivity execute(HttpHost target,

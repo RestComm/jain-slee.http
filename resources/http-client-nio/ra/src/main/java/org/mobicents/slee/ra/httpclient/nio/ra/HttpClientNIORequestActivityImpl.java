@@ -68,12 +68,12 @@ public class HttpClientNIORequestActivityImpl implements HttpClientNIORequestAct
 	
 	void execute(HttpUriRequest request,
 			HttpContext context, Object applicationData) {		
-		future = ra.httpclient.execute(request, processHttpContext(context), getFutureCallback(applicationData));
+		future = ra.httpAsyncClient.execute(request, processHttpContext(context), getFutureCallback(applicationData));
 	}
 
 	void execute(HttpHost target, HttpRequest request,
 			HttpContext context, Object applicationData) {		
-		future = ra.httpclient.execute(target, request, processHttpContext(context), getFutureCallback(applicationData));
+		future = ra.httpAsyncClient.execute(target, request, processHttpContext(context), getFutureCallback(applicationData));
 	}
 	
 	private HttpContext processHttpContext(HttpContext context) {

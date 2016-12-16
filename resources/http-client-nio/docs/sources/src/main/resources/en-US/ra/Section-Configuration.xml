@@ -31,7 +31,31 @@
           <entry>May be used to provide a class which is responsible for building the HTTP Client.</entry>
           <entry>java.lang.String</entry>
           <entry/>
-        </row>        
+        </row>
+        <row>
+          <entry>DEFAULT_MAX_CONNECTIONS_PER_ROUTE</entry>
+          <entry>Configures the client to override default limit of defaul max concurrent connections for routes.</entry>
+          <entry>java.lang.Integer</entry>
+          <entry>500</entry>
+        </row>
+        <row>
+          <entry>MAX_CONNECTIONS_TOTAL</entry>
+          <entry>Max total concurrent connections.</entry>
+          <entry>java.lang.Integer</entry>
+          <entry>1000</entry>
+        </row>
+        <row>
+          <entry>DEFAULT_SOCKET_TIMEOUT</entry>
+          <entry>Default socket timeout value for non-blocking I/O operations.</entry>
+          <entry>java.lang.Integer</entry>
+          <entry>30000</entry>
+        </row>
+        <row>
+          <entry>DEFAULT_CONNECT_TIMEOUT</entry>
+          <entry>Default connect timeout value for non-blocking connection requests.</entry>
+          <entry>java.lang.Integer</entry>
+          <entry>30000</entry>
+        </row>
       </tbody>
     </tgroup>
   </table>

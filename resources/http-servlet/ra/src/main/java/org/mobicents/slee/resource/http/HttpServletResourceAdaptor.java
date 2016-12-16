@@ -460,8 +460,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
         final Object lock = requestLock.getLock(requestEvent);
         synchronized (lock) {
             try {
-                sleeEndpoint.fireEvent(activity, eventType, requestEvent, null, null,
-                        EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK);
+                sleeEndpoint.fireEvent(activity, eventType, requestEvent, null, null, EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK);
                 // block thread until event has been processed
                 lock.wait(15000);
                 // the event was unreferenced or 15s timeout, if the activity is the request then end it

@@ -6,6 +6,8 @@
 		<properties>
 			<property name="DEFAULT_MAX_CONNECTIONS_PER_ROUTE" type="java.lang.Integer" value="500" />
 			<property name="MAX_CONNECTIONS_TOTAL" type="java.lang.Integer" value="1000" />
+			<property name="DEFAULT_SOCKET_TIMEOUT" type="java.lang.Integer" value="30000" />
+			<property name="DEFAULT_CONNECT_TIMEOUT" type="java.lang.Integer" value="30000" />
 		</properties>
 		<ra-link name="HttpClientNIO" />
 	</ra-entity>

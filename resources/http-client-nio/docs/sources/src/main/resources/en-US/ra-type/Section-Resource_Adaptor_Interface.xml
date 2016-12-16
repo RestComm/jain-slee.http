@@ -17,8 +17,6 @@ package org.mobicents.slee.ra.httpclient.nio.ratype;
 
 public interface HttpClientNIOResourceAdaptorSbbInterface {
 
-	HttpParams getHttpClientParams();
-
 	HttpClientNIORequestActivity execute(HttpUriRequest request,
 			HttpContext context, Object applicationData) 
 			throws TransactionRequiredLocalException, 

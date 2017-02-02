@@ -52,18 +52,20 @@
 									  file="src/main/module/module.xml"
 									  toDir="${jboss.home}/modules/system/layers/base/${module.path}/main" />
 
-								<!-- clean before? -->
-								<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-									<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
-									<replacevalue><![CDATA[]]></replacevalue>
-								</replace>
+								<available file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml" property="module.xml.present">
+									<!-- clean before? -->
+									<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
+										<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
+										<replacevalue><![CDATA[]]></replacevalue>
+									</replace>
 
-								<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-									<replacetoken><![CDATA[</dependencies>]]></replacetoken>
-									<replacevalue><![CDATA[
-		<module name="org.mobicents.slee.resource.http.common" export="true"/>
-	</dependencies>]]></replacevalue>
-								</replace>
+									<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
+										<replacetoken><![CDATA[</dependencies>]]></replacetoken>
+										<replacevalue><![CDATA[
+			<module name="org.mobicents.slee.resource.http.common" export="true"/>
+		</dependencies>]]></replacevalue>
+									</replace>
+								</available>
 							</tasks>
 						</configuration>
 					</execution>
@@ -78,10 +80,12 @@
 								<delete quiet="true"
 										dir="${jboss.home}/modules/system/layers/base/${module.path}" />
 
-								<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-									<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
-									<replacevalue><![CDATA[]]></replacevalue>
-								</replace>
+								<available file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml" property="module.xml.present">
+									<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
+										<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
+										<replacevalue><![CDATA[]]></replacevalue>
+									</replace>
+								</available>
 							</tasks>
 						</configuration>
 					</execution>

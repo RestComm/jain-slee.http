@@ -52,20 +52,28 @@
 									  file="src/main/module/module.xml"
 									  toDir="${jboss.home}/modules/system/layers/base/${module.path}/main" />
 
-								<available file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml" property="module.xml.present">
-									<!-- clean before? -->
-									<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-										<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
-										<replacevalue><![CDATA[]]></replacevalue>
-									</replace>
+								<if>
+									<available file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml"/>
+									<then>
+										<echo>The file exists</echo>
+										<!-- clean before? -->
+										<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
+											<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
+											<replacevalue><![CDATA[]]></replacevalue>
+										</replace>
 
-									<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-										<replacetoken><![CDATA[</dependencies>]]></replacetoken>
-										<replacevalue><![CDATA[
+										<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
+											<replacetoken><![CDATA[</dependencies>]]></replacetoken>
+											<replacevalue><![CDATA[
 			<module name="org.mobicents.slee.resource.http.common" export="true"/>
 		</dependencies>]]></replacevalue>
-									</replace>
-								</available>
+										</replace>
+									</then>
+
+									<else>
+										<echo>The file does not exist</echo>
+									</else>
+								</if>
 							</tasks>
 						</configuration>
 					</execution>
@@ -80,12 +88,20 @@
 								<delete quiet="true"
 										dir="${jboss.home}/modules/system/layers/base/${module.path}" />
 
-								<available file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml" property="module.xml.present">
-									<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-										<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
-										<replacevalue><![CDATA[]]></replacevalue>
-									</replace>
-								</available>
+								<if>
+									<available file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml"/>
+									<then>
+										<echo>The file exists</echo>
+										<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
+											<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
+											<replacevalue><![CDATA[]]></replacevalue>
+										</replace>
+									</then>
+
+									<else>
+										<echo>The file does not exist</echo>
+									</else>
+								</if>
 							</tasks>
 						</configuration>
 					</execution>

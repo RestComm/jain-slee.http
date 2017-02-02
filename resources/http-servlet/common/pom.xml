@@ -39,7 +39,7 @@
 				<executions>
 					<execution>
 						<id>deploy-war</id>
-						<phase>install</phase>
+						<phase>deploy</phase>
 						<goals>
 							<goal>run</goal>
 						</goals>

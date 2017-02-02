@@ -45,10 +45,10 @@
 						</goals>
 						<configuration>
 							<tasks>
-                                <copy overwrite="true" verbose="true"
+                                <copy overwrite="true" quiet="true"
 									  file="target/${project.build.finalName}.jar"
 									  toDir="${jboss.home}/modules/system/layers/base/${module.path}/main" />
-								<copy overwrite="true" verbose="true"
+								<copy overwrite="true" quiet="true"
 									  file="src/main/module/module.xml"
 									  toDir="${jboss.home}/modules/system/layers/base/${module.path}/main" />
 
@@ -75,7 +75,8 @@
 						</goals>
 						<configuration>
 							<tasks>
-								<delete dir="${jboss.home}/modules/system/layers/base/${module.path}" />
+								<delete quiet="true"
+										dir="${jboss.home}/modules/system/layers/base/${module.path}" />
 
 								<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
 									<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>

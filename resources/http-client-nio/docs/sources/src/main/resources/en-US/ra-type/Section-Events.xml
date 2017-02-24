@@ -31,9 +31,9 @@
 			<tbody>
 				<row>
 					<entry>HttpClientNIO ResponseEvent</entry>
-					<entry>org.mobicents</entry>
+					<entry>org.restcomm</entry>
 					<entry>1.0</entry>
-					<entry>org.mobicents.slee.ra .httpclient.nio.events. HttpClientNIO ResponseEvent</entry>					
+					<entry>org.restcomm.slee.ra .httpclient.nio.events. HttpClientNIO ResponseEvent</entry>
 					<entry>A response event to an asynchronous HTTP request.</entry>
 				</row>
 			</tbody>

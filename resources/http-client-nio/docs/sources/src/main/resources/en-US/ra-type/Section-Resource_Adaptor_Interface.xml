@@ -9,11 +9,11 @@
 
 	<title>Resource Adaptor Interface</title>
 
-	<para>The &THIS.RA; Resource Adaptor interface, of type <literal>org.mobicents.slee.ra. httpclient.nio.ratype. HttpClientNIOResourceAdaptorSbbInterface</literal>, which a SBB uses to executes new HTTP client requests, or to retrieve the http params used by managed HTTP Client, has its interface is defined as follows:</para>
+	<para>The &THIS.RA; Resource Adaptor interface, of type <literal>org.restcomm.slee.ra. httpclient.nio.ratype. HttpClientNIOResourceAdaptorSbbInterface</literal>, which a SBB uses to executes new HTTP client requests, or to retrieve the http params used by managed HTTP Client, has its interface is defined as follows:</para>
 	
 	<programlisting language="Java" role="JAVA">
 		<![CDATA[
-package org.mobicents.slee.ra.httpclient.nio.ratype;
+package org.restcomm.slee.ra.httpclient.nio.ratype;
 
 public interface HttpClientNIOResourceAdaptorSbbInterface {
 

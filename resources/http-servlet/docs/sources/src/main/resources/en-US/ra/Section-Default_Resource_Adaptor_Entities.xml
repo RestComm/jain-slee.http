@@ -20,7 +20,7 @@
 					HttpServletResourceAdaptorType
 				</resource-adaptor-type-name>
 				<resource-adaptor-type-vendor>
-					org.mobicents
+					org.restcomm
 				</resource-adaptor-type-vendor>
 				<resource-adaptor-type-version>
 					1.0

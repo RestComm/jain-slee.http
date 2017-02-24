@@ -5,7 +5,7 @@
             <subsystem name="ejb3" />
         </exclude-subsystems>
 	    <dependencies>
-            <module name="org.mobicents.slee.resource.http.common"/>
+            <module name="org.restcomm.slee.resource.http.common"/>
         </dependencies>
     </deployment>
 </jboss-deployment-structure>

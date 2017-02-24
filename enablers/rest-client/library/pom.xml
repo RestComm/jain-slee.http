@@ -40,11 +40,11 @@
 				</executions>
 				<configuration>
 					<library-name>RESTClientEnabler</library-name>
-					<library-vendor>org.mobicents</library-vendor>
+					<library-vendor>org.restcomm</library-vendor>
 					<library-version>1.0</library-version>
 					<resource-adaptor-type-ref>
     					<resource-adaptor-type-name>HttpClientResourceAdaptorType</resource-adaptor-type-name>
-    					<resource-adaptor-type-vendor>org.mobicents</resource-adaptor-type-vendor>
+    					<resource-adaptor-type-vendor>org.restcomm</resource-adaptor-type-vendor>
     					<resource-adaptor-type-version>4.0</resource-adaptor-type-version>
   					</resource-adaptor-type-ref>
 				</configuration>

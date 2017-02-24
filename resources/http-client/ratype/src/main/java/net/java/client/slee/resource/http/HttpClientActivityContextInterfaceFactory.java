@@ -35,7 +35,7 @@ import javax.slee.resource.ResourceAdaptorTypeID;
 public interface HttpClientActivityContextInterfaceFactory {
 
 	public static final ResourceAdaptorTypeID RESOURCE_ADAPTOR_TYPE_ID = new ResourceAdaptorTypeID(
-			"HttpClientResourceAdaptorType", "org.mobicents", "4.0");
+			"HttpClientResourceAdaptorType", "org.restcomm", "4.0");
 
 	public ActivityContextInterface getActivityContextInterface(
 			HttpClientActivity acivity) throws NullPointerException,

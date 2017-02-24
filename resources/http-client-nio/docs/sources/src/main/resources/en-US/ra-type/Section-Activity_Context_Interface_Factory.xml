@@ -9,11 +9,11 @@
 
 	<title>Activity Context Interface Factory</title>
 
-	<para>The Resource Adaptor's Activity Context Interface Factory is of type <literal>org.mobicents.slee.ra. httpclient.nio.ratype. HttpClientNIOActivityContextInterfaceFactory</literal>, it allows the SBB to retrieve the <literal>ActivityContextInterface</literal> related with an existing Resource Adaptor activity object. The interface is defined as follows:</para>
+	<para>The Resource Adaptor's Activity Context Interface Factory is of type <literal>org.restcomm.slee.ra. httpclient.nio.ratype. HttpClientNIOActivityContextInterfaceFactory</literal>, it allows the SBB to retrieve the <literal>ActivityContextInterface</literal> related with an existing Resource Adaptor activity object. The interface is defined as follows:</para>
 	
 	<programlisting language="Java" role="JAVA">
 		<![CDATA[
-package org.mobicents.slee.ra.httpclient.nio.ratype;
+package org.restcomm.slee.ra.httpclient.nio.ratype;
 
 public interface HttpClientNIOActivityContextInterfaceFactory {
 

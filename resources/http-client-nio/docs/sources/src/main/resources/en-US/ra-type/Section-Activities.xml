@@ -9,7 +9,7 @@
 
 	<title>Activities</title>
 
-	<para>The single activity object for &THIS.RA; Resource Adaptor is the <literal>org.mobicents.slee.ra. httpclient.nio.ratype. HttpClientNIORequestActivity</literal> interface. Each activity is mapped to a single HTTP request, and through its interface a SBB may cancel the request, or check the request status. The asynchronous event related to the server response is fired in the activity.</para>
+	<para>The single activity object for &THIS.RA; Resource Adaptor is the <literal>org.restcomm.slee.ra. httpclient.nio.ratype. HttpClientNIORequestActivity</literal> interface. Each activity is mapped to a single HTTP request, and through its interface a SBB may cancel the request, or check the request status. The asynchronous event related to the server response is fired in the activity.</para>
 	
 	<para>An activity starts when a SBB, executes a request, through the RA SBB Interface, and it ends when the response event is unreferenced.</para>
 	
@@ -17,7 +17,7 @@
 	
 	<programlisting language="Java" role="JAVA">
 		<![CDATA[
-package org.mobicents.slee.ra.httpclient.nio.ratype;
+package org.restcomm.slee.ra.httpclient.nio.ratype;
 
 public interface HttpClientNIORequestActivity {
 

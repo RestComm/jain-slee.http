@@ -1,5 +1,8 @@
 <?xml version='1.0'?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [<!ENTITY % BOOK_ENTITIES SYSTEM "JAIN_SLEE_Enabler_REST_Client_User_Guide.ent">%BOOK_ENTITIES;]>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "JAIN_SLEE_Enabler_REST_Client_User_Guide.ent">
+%BOOK_ENTITIES;
+]>
 
 <chapter id="using_the_enabler">
 
@@ -11,10 +14,10 @@
 		
 		<title>The Child's SbbLocalObject Interface</title>
 		
-		<para>The &THIS.PLATFORM; JAIN SLEE &THIS.ENABLER; Enabler Sbb, the Child Sbb, implements the <literal>org.mobicents.slee.enabler.rest.client.RESTClientEnablerChildSbbLocalObject</literal>, which extends the <literal>org.mobicents.slee.SbbLocalObjectExt</literal> and <literal>org.mobicents.slee.enabler.rest.client.RESTClientEnablerChild</literal> interfaces, the latter declares the methods which can be used to interact with the REST Web Service:</para>
+		<para>The &THIS.PLATFORM; JAIN SLEE &THIS.ENABLER; Enabler Sbb, the Child Sbb, implements the <literal>RESTClientEnablerChildSbbLocalObject</literal>, which extends the <literal>org.restcomm.slee.SbbLocalObjectExt</literal> and <literal>RESTClientEnablerChild</literal> interfaces, the latter declares the methods which can be used to interact with the REST Web Service:</para>
 		
 		<programlisting language="Java" role="JAVA"><![CDATA[
-package org.mobicents.slee.enabler.rest.client;
+package org.restcomm.slee.enabler.rest.client;
 
 public interface RESTClientEnablerChild {
 
@@ -61,7 +64,7 @@ public interface RESTClientEnablerChild {
 	
 	<section id="creating_requests">
 		<title>Creating Requests for REST Resources</title>
-		<para>Requests are instances of <literal>org.mobicents.slee.enabler.rest.client.RESTClientEnablerRequest</literal>, which include all the mandatory and optional data, needed by the Enabler to send the HTTP messages to the REST Web Services.</para>
+		<para>Requests are instances of <literal>RESTClientEnablerRequest</literal>, which include all the mandatory and optional data, needed by the Enabler to send the HTTP messages to the REST Web Services.</para>
 		<para>The only mandatory data is the request type (the HTTP message method name) and the REST Web Service URI, but the application using the enabler may also include a SignPost OAuthConsumer object, to sign the request according to OAuth protocol, additional headers and/or content to include in the HTTP message, and content. The following Java code examples the creation of a POST request to update status in the Twitter network:</para>
 		<programlisting language="Java" role="JAVA"><![CDATA[
 	String uri = "http://api.twitter.com/1/statuses/update.json?status="

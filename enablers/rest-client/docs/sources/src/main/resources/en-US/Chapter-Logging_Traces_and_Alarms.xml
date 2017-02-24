@@ -18,7 +18,7 @@
 		The related log4j category is 
 		<literal>javax.slee.SbbNotification[service=ServiceID[name=</literal>
 		<literal>ServiceX,vendor=VendorY,version=VersionZ],</literal>
-		<literal>sbb=SbbID[name=RESTClientEnabler,vendor=org.mobicents,version=1.0]]</literal>.
+		<literal>sbb=SbbID[name=RESTClientEnabler,vendor=org.restcomm,version=1.0]]</literal>.
 		Where <literal>ServiceX</literal>, <literal>VendorY</literal> and <literal>VersionZ</literal> need to be replaced by the identifiers of the Service using the Enabler.
 		</para>
 	</section>	

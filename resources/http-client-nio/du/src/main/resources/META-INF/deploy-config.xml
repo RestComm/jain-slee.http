@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deploy-config>
 	<ra-entity
-		resource-adaptor-id="ResourceAdaptorID[name=HttpClientNIO,vendor=org.mobicents,version=1.0]"
+		resource-adaptor-id="ResourceAdaptorID[name=HttpClientNIO,vendor=org.restcomm,version=1.0]"
 		entity-name="HttpClientNIO">
 		<properties>
 			<property name="DEFAULT_MAX_CONNECTIONS_PER_ROUTE" type="java.lang.Integer" value="500" />

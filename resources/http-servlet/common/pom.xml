@@ -12,10 +12,10 @@
 	<name>Restcomm :: Resources :: ${project.artifactId}</name>
 
 	<properties>
-		<module.name>org.mobicents.slee.resource.http.common</module.name>
-		<module.path>org/mobicents/slee/resource/http/common</module.path>
+		<module.name>org.restcomm.slee.resource.http.common</module.name>
+		<module.path>org/restcomm/slee/resource/http/common</module.path>
 
-		<slee.lib.path>org/telestax/slee/container/lib</slee.lib.path>
+		<slee.lib.path>org/restcomm/slee/container/lib</slee.lib.path>
 	</properties>
 		
 	<dependencies>
@@ -57,14 +57,14 @@
 
 										<!-- clean before? -->
 										<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-											<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
+											<replacetoken><![CDATA[<module name="org.restcomm.slee.resource.http.common" export="true"/>]]></replacetoken>
 											<replacevalue><![CDATA[]]></replacevalue>
 										</replace>
 
 										<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
 											<replacetoken><![CDATA[</dependencies>]]></replacetoken>
 											<replacevalue><![CDATA[
-		<module name="org.mobicents.slee.resource.http.common" export="true"/>
+		<module name="org.restcomm.slee.resource.http.common" export="true"/>
 	</dependencies>]]></replacevalue>
 										</replace>
 									</tasks>
@@ -81,7 +81,7 @@
 										<delete dir="${jboss.home}/modules/system/layers/base/${module.path}" />
 
 										<replace file="${jboss.home}/modules/system/layers/base/${slee.lib.path}/main/module.xml">
-											<replacetoken><![CDATA[<module name="org.mobicents.slee.resource.http.common" export="true"/>]]></replacetoken>
+											<replacetoken><![CDATA[<module name="org.restcomm.slee.resource.http.common" export="true"/>]]></replacetoken>
 											<replacevalue><![CDATA[]]></replacevalue>
 										</replace>
 									</tasks>

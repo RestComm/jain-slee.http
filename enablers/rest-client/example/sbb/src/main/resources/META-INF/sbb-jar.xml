@@ -8,20 +8,20 @@
 		<description />
 
 		<sbb-name>RESTClientEnablerExample</sbb-name>
-		<sbb-vendor>org.mobicents</sbb-vendor>
+		<sbb-vendor>org.restcomm</sbb-vendor>
 		<sbb-version>1.0</sbb-version>
 
 		<!-- Delegate to this child SBB if we need to do registrations -->
 		<sbb-ref>
 			<sbb-name>RESTClientEnabler</sbb-name>
-			<sbb-vendor>org.mobicents</sbb-vendor>
+			<sbb-vendor>org.restcomm</sbb-vendor>
 			<sbb-version>1.0</sbb-version>
 			<sbb-alias>childSbb</sbb-alias>
 		</sbb-ref>
 
 		<sbb-classes>
 			<sbb-abstract-class reentrant="True">
-				<sbb-abstract-class-name>org.mobicents.slee.enabler.rest.client.example.RESTClientEnablerExampleSbb</sbb-abstract-class-name>
+				<sbb-abstract-class-name>org.restcomm.slee.enabler.rest.client.example.RESTClientEnablerExampleSbb</sbb-abstract-class-name>
 				<get-child-relation-method>
 					<sbb-alias-ref>childSbb</sbb-alias-ref>
 					<get-child-relation-method-name>
@@ -31,7 +31,7 @@
 				</get-child-relation-method>
 			</sbb-abstract-class>
 			<sbb-local-interface>
-				<sbb-local-interface-name>org.mobicents.slee.enabler.rest.client.RESTClientEnablerParentSbbLocalObject</sbb-local-interface-name>
+				<sbb-local-interface-name>org.restcomm.slee.enabler.rest.client.RESTClientEnablerParentSbbLocalObject</sbb-local-interface-name>
 			</sbb-local-interface>
 
 		</sbb-classes>

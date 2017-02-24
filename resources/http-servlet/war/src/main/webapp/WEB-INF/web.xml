@@ -9,13 +9,13 @@
 	</welcome-file-list>
 	<listener>
 		<listener-class>
-			org.mobicents.slee.resource.http.HttpServletRaSessionListener
+			HttpServletRaSessionListener
 		</listener-class>
 	</listener> 		
 	<servlet>
 		<servlet-name>${servlet-name}</servlet-name>
 		<servlet-class>
-			org.mobicents.slee.resource.http.HttpServletRaServlet
+			HttpServletRaServlet
 		</servlet-class>
         <init-param>
             <param-name>ra-entry-point-jndi-name</param-name>

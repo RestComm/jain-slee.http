@@ -88,7 +88,7 @@ public class HttpClientResourceAdaptorSbbInterfaceImpl implements HttpClientReso
 			context.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
 		}
 
-		HttpClientActivity activity = new HttpClientActivityImpl(this.ra, endOnReceivingResponse, context);
+		HttpClientActivity activity = new HttpClientActivityImpl(this.ra, endOnReceivingResponse, context, tracer);
 
 		HttpClientActivityHandle handle = new HttpClientActivityHandle(activity.getSessionId());
 

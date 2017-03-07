@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.slee.Address;
 import javax.slee.EventTypeID;
@@ -59,7 +60,7 @@ import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.SyncBasicHttpParams;
 import org.apache.http.protocol.HttpContext;
@@ -195,17 +196,19 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
             SchemeRegistry schemeRegistry = new SchemeRegistry();
             schemeRegistry.register(new Scheme("http", 80, PlainSocketFactory.getSocketFactory()));
             schemeRegistry.register(new Scheme("https", 443, SSLSocketFactory.getSocketFactory()));
-            ThreadSafeClientConnManager threadSafeClientConnManager = new ThreadSafeClientConnManager(schemeRegistry);
+            PoolingClientConnectionManager threadSafeClientConnManager = new PoolingClientConnectionManager(
+                    schemeRegistry);
             threadSafeClientConnManager.setMaxTotal(maxTotal);
             for (Entry<HttpRoute, Integer> entry : maxForRoutes.entrySet()) {
-                if(tracer.isInfoEnabled()){
+                if (tracer.isInfoEnabled()) {
                     tracer.info(String.format("Configuring MaxForRoute %s max %d", entry.getKey(), entry.getValue()));
                 }
-                threadSafeClientConnManager.setMaxForRoute(entry.getKey(), entry.getValue());
+                threadSafeClientConnManager.setMaxPerRoute(entry.getKey(), entry.getValue());
             }
             httpclient = new DefaultHttpClient(threadSafeClientConnManager, params);
         }
         isActive = true;
+
         if (tracer.isInfoEnabled()) {
             tracer.info(String.format("HttpClientResourceAdaptor=%s entity activated.",
                     this.resourceAdaptorContext.getEntityName()));
@@ -658,6 +661,9 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
                     response = httpclient.execute((HttpUriRequest) this.httpRequest, this.httpContext);
                 }
 
+                //track response inactivity for later closing
+                ((HttpClientActivityImpl)activity).addResponse(response);
+                        
                 if (tracer.isFineEnabled()) {
                     tracer.fine("Executed Request " + httpRequest);
                 }
@@ -673,15 +679,6 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
                 event = new ResponseEvent(e, requestApplicationData);
             }
 
-            if (this.activity.isEnded()) {
-                // received response event for which activity is already ended.
-                // Just add this in logs
-                tracer.warning(String.format(
-                        "Wanted to fire ResponseEvent for HttpClientActivity %s but activity is already ended, "
-                                + "droping event", this.activity.getSessionId()));
-                return;
-            }
-
             // process event
             processResponseEvent(event, this.activity);
 
@@ -692,6 +689,72 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
                 } finally {
                     ((HttpClientActivityImpl) this.activity).setEnded(true);
                 }
+            }
+            
+            //this piece needs to be after previous section to cover the 
+            // EndOnReceivingResponse=true scenario, and response is properly closed
+            if (this.activity.isEnded()) {
+                // received response event for which activity is already ended.
+                // Just add this in logs
+                tracer.warning(String.format(
+                        "Wanted to fire ResponseEvent for HttpClientActivity %s but activity is already ended, "
+                                + "droping event", this.activity.getSessionId()));
+                
+                //some cleaning so no leaks
+                if (response != null) {
+                    try {
+                        EntityUtils.consume(response.getEntity());
+                    } catch (IOException e) {
+                        tracer.severe("Exception while housekeeping. Event unreferenced", e);
+                    }
+                }
+                
+                return;
+            }            
+        }
+
+    }
+
+    public static class IdleConnectionMonitorThread extends Thread {
+
+        private final PoolingClientConnectionManager connMgr;
+        private volatile boolean shutdown;
+        private final Tracer tracer;
+
+        public IdleConnectionMonitorThread(PoolingClientConnectionManager connMgr, Tracer tracer) {
+            super();
+            this.connMgr = connMgr;
+            this.tracer = tracer;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!shutdown) {
+                    synchronized (this) {
+                        wait(5000);
+
+                        // Close expired connections
+                        connMgr.closeExpiredConnections();
+                        // close connections that have been idle longer than 30
+                        // sec
+                        connMgr.closeIdleConnections(30, TimeUnit.SECONDS);
+
+                        if (tracer.isFineEnabled()) {
+                            this.tracer.fine("Stats after closeExpiredConnections and closeIdleConnections \n"
+                                    + connMgr.getTotalStats());
+                        }
+                    }
+                }
+            } catch (InterruptedException ex) {
+                // terminate
+            }
+        }
+
+        public void shutdown() {
+            shutdown = true;
+            synchronized (this) {
+                notifyAll();
             }
         }
 

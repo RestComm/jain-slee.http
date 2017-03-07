@@ -22,14 +22,20 @@
 
 package org.restcomm.client.slee.resource.http;
 
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import javax.slee.facilities.Tracer;
 
 import net.java.client.slee.resource.http.HttpClientActivity;
+import org.apache.http.HttpEntity;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.util.EntityUtils;
 
 /**
  * @author amit bhayani
@@ -43,14 +49,16 @@ public class HttpClientActivityImpl implements HttpClientActivity {
 	private final boolean endOnReceivingResponse;
 	private final HttpContext context;
 	private volatile boolean ended = false;
+	private Queue<HttpResponse> responses = new ConcurrentLinkedQueue();
+	private Tracer tracer;
 
 	public HttpClientActivityImpl(HttpClientResourceAdaptor ra,
-			boolean endOnReceivingResponse, HttpContext context) {
+			boolean endOnReceivingResponse, HttpContext context, Tracer tracer) {
 		this.ra = ra;
 		this.sessionId = UUID.randomUUID().toString();
 		this.endOnReceivingResponse = endOnReceivingResponse;
 		this.context = context;
-
+		this.tracer = tracer;
 	}
 
 	@Override
@@ -58,6 +66,21 @@ public class HttpClientActivityImpl implements HttpClientActivity {
 		if (this.endOnReceivingResponse) {
 			throw new IllegalStateException(
 					"Activity will end automatically as soon as Response is received");
+		}
+		if (tracer.isFineEnabled()){
+		    tracer.fine("Closing responses. Size:" + responses.size());
+		}
+		for (HttpResponse resAux : responses) {
+		    HttpEntity entity = resAux.getEntity();
+		    if (entity != null) {
+		        try {
+		            EntityUtils.consume(entity);
+		        } catch (Exception ex) {
+		            if (tracer.isFineEnabled()) {
+		                tracer.fine("Error closing response on endactivity", ex);
+		            }
+		        }
+		    }
 		}
 		try{
 		    this.ra.endActivity(this);
@@ -117,6 +140,11 @@ public class HttpClientActivityImpl implements HttpClientActivity {
 		} else {
 			return false;
 		}
+	}
+	
+	public void addResponse(HttpResponse res) {
+	    tracer.fine("Adding new response to activity");
+	    responses.add(res);
 	}
 
 }

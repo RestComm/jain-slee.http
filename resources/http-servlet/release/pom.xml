@@ -39,8 +39,11 @@
 											<fileset dir="${basedir}/../war/target">
 												<include name="*.war" />
 											</fileset>
+										</copy>
+										<copy overwrite="true" todir="${release.dir}/resources/http-servlet/http/common/main">
 											<fileset dir="${basedir}/../common/target">
 												<include name="*.jar" />
+												<include name="*.xml" />
 											</fileset>
 										</copy>
 										<copy overwrite="true" file="${basedir}/../du/target/build.xml" tofile="${release.dir}/resources/http-servlet/du-management.xml" />

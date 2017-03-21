@@ -6,8 +6,17 @@
 	<property name="jboss.home" value="${home}/@JBOSS.PATH@/" />
 	<property name="deploy.dir" value="${jboss.home}/standalone/deployments/" />
 
+	<property name="jboss.modules.path" value="${jboss.home}/modules/system/layers/base" />
+	<property name="slee-resource.path" value="${jboss.modules.path}/org/restcomm/slee/resource/http" />
+
 	<target name="deploy">
-		<!--<copy overwrite="true" todir="${deploy.dir}" file="${home}/restcomm-slee-ra-http-servlet-common.jar" />-->
+		<!-- Copy HTTP Servlet Common Module -->
+		<copy overwrite="true" todir="${slee-resource.path}">
+			<fileset dir="./http">
+				<include name="**" />
+			</fileset>
+		</copy>
+
 		<copy overwrite="true" todir="${deploy.dir}" file="${home}/restcomm.war" />
 		<ant antfile="${home}/du-management.xml" target="deploy" inheritAll="false">
 			<property name="jboss.home" value="${jboss.home}" />
@@ -19,7 +28,7 @@
 			<property name="jboss.home" value="${jboss.home}" />
 		</ant>
 		<delete file="${deploy.dir}/restcomm.war" />
-		<!--<delete file="${deploy.dir}/restcomm-slee-ra-http-servlet-common.jar" />-->
+		<delete dir="${slee-resource.path}" />
 	</target>
 
 </project>

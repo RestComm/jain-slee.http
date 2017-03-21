@@ -31,6 +31,33 @@
 		</dependency>
 	</dependencies>
 
+	<build>
+		<finalName>restcomm-slee-ra-http-servlet-common</finalName>
+		<plugins>
+			<plugin>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>prepare-module</id>
+						<phase>install</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<tasks>
+								<copy todir="target" flatten="true">
+									<fileset dir=".">
+										<include name="src/main/module/module.xml"/>
+									</fileset>
+								</copy>
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
 	<profiles>
 		<profile>
 			<id>deploy-module-wildfly</id>

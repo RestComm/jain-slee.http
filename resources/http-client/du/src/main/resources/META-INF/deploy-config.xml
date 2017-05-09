@@ -6,7 +6,8 @@
 		<properties>
 			<property name="MAX_CONNECTIONS_FOR_ROUTES" type="java.lang.String" value="http:localhost:8080:500" />
 			<property name="MAX_CONNECTIONS_TOTAL" type="java.lang.Integer" value="1000" />
-		</properties>
+            		<property name="DEFAULT_MAX_FOR_ROUTE" type="java.lang.Integer" value="4" />
+        </properties>
 		<ra-link name="HttpClientResourceAdaptor" />
 	</ra-entity>
 </deploy-config>

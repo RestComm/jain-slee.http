@@ -23,6 +23,7 @@
 package org.mobicents.client.slee.resource.http;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,6 +49,7 @@ import javax.slee.resource.ResourceAdaptorContext;
 import net.java.client.slee.resource.http.HttpClientActivity;
 import net.java.client.slee.resource.http.HttpClientResourceAdaptorSbbInterface;
 import net.java.client.slee.resource.http.event.ResponseEvent;
+import javax.slee.resource.ActivityIsEndingException;
 
 import org.apache.http.HeaderElement;
 import org.apache.http.HeaderElementIterator;
@@ -84,6 +86,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
     private static final String CFG_PROPERTY_HTTP_CLIENT_FACTORY = "HTTP_CLIENT_FACTORY";
     private static final String CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES = "MAX_CONNECTIONS_FOR_ROUTES";
     private static final String CFG_PROPERTY_MAX_CONNECTIONS_TOTAL = "MAX_CONNECTIONS_TOTAL";
+    private static final String CFG_PROPERTY_DEFAULT_MAX_FOR_ROUTE = "DEFAULT_MAX_FOR_ROUTE";
 
     private static final int HTTP_SCHEME_INDEX = 0;
     private static final int HTTP_HOST_INDEX = 1;
@@ -105,6 +108,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
 
     // configuration
     private int maxTotal;
+    private int defaultMaxForRoute;
     private Map<HttpRoute, Integer> maxForRoutes;
     private HttpClientFactory httpClientFactory;
 
@@ -146,6 +150,8 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
             maxTotal = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
 
             maxForRoutes = new HashMap<HttpRoute, Integer>();
+
+            defaultMaxForRoute = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_MAX_FOR_ROUTE).getValue();
 
             String maxForRoutesString = (String) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_FOR_ROUTES)
                     .getValue();
@@ -207,6 +213,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
             PoolingClientConnectionManager threadSafeClientConnManager = new PoolingClientConnectionManager(
                     schemeRegistry);
             threadSafeClientConnManager.setMaxTotal(maxTotal);
+            threadSafeClientConnManager.setDefaultMaxPerRoute(defaultMaxForRoute);
             for (Entry<HttpRoute, Integer> entry : maxForRoutes.entrySet()) {
                 if (tracer.isInfoEnabled()) {
                     tracer.info(String.format("Configuring MaxForRoute %s max %d", entry.getKey(), entry.getValue()));
@@ -319,6 +326,18 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
                 Integer i = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
                 if (i < 1) {
                     throw new InvalidConfigurationException(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL + " must be > 0");
+                }
+            } catch (InvalidConfigurationException e) {
+                throw e;
+            } catch (Exception e) {
+                tracer.severe("failure in config validation", e);
+                throw new InvalidConfigurationException(e.getMessage());
+            }
+
+            try {
+                Integer i = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_MAX_FOR_ROUTE).getValue();
+                if (i < 1) {
+                    throw new InvalidConfigurationException(CFG_PROPERTY_DEFAULT_MAX_FOR_ROUTE + " must be > 0");
                 }
             } catch (InvalidConfigurationException e) {
                 throw e;
@@ -650,7 +669,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
      * @param event
      * @param activity
      */
-    public void processResponseEvent(ResponseEvent event, HttpClientActivity activity) {
+    public void processResponseEvent(ResponseEvent event, HttpClientActivity activity) throws ActivityIsEndingException {
 
         HttpClientActivityHandle ah = new HttpClientActivityHandle(activity.getSessionId());
 
@@ -660,7 +679,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
         try {
             resourceAdaptorContext.getSleeEndpoint().fireEvent(ah, fireableEventType, event, null, null, EVENT_FLAGS);
         } catch (Throwable e) {
-            tracer.severe(e.getMessage(), e);
+            throw new ActivityIsEndingException();
         }
     }
 
@@ -720,7 +739,13 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
             }
 
             // process event
-            processResponseEvent(event, this.activity);
+            try {
+                processResponseEvent(event, this.activity);
+            } catch (ActivityIsEndingException e) {
+                this.activity.endActivity();
+                ((HttpClientActivityImpl) this.activity).setEnded(true);
+
+            }
 
             // If EndOnReceivingResponse is set to true, end the Activity
             if (this.activity.getEndOnReceivingResponse()) {
@@ -743,7 +768,9 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
                 //some cleaning so no leaks
                 if (response != null) {
                     try {
-                        EntityUtils.consume(response.getEntity());
+                        InputStream responsedStream = response.getEntity().getContent();
+                        responsedStream.close();
+                        EntityUtils.consumeQuietly(response.getEntity());
                     } catch (IOException e) {
                         tracer.severe("Exception while housekeeping. Event unreferenced", e);
                     }

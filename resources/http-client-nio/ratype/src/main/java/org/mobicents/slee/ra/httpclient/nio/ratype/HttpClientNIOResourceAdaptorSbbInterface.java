@@ -30,7 +30,6 @@ import javax.slee.resource.StartActivityException;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 
 /**
@@ -40,13 +39,6 @@ import org.apache.http.protocol.HttpContext;
  * 
  */
 public interface HttpClientNIOResourceAdaptorSbbInterface {
-
-	/**
-	 * Retrieves the params from the client managed by the RA.
-	 * 
-	 * @return
-	 */
-	HttpParams getHttpClientParams();
 
 	/**
 	 * 

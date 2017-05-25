@@ -1,31 +1,25 @@
 package org.mobicents.slee.ra.httpclient.nio.ra;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.slee.Address;
-import javax.slee.facilities.Tracer;
-import javax.slee.resource.ActivityHandle;
-import javax.slee.resource.ConfigProperties;
-import javax.slee.resource.EventFlags;
-import javax.slee.resource.FailureReason;
-import javax.slee.resource.FireableEventType;
-import javax.slee.resource.InvalidConfigurationException;
-import javax.slee.resource.Marshaler;
-import javax.slee.resource.ReceivableService;
-import javax.slee.resource.ResourceAdaptor;
-import javax.slee.resource.ResourceAdaptorContext;
-
 import org.apache.http.HttpResponse;
-import org.apache.http.impl.nio.client.DefaultHttpAsyncClient;
-import org.apache.http.impl.nio.conn.PoolingClientAsyncConnectionManager;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
+import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
 import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
+import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.client.HttpAsyncClient;
+import org.apache.http.nio.reactor.ConnectingIOReactor;
+import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.http.util.EntityUtils;
 import org.mobicents.slee.ra.httpclient.nio.events.HttpClientNIOEventTypes;
 import org.mobicents.slee.ra.httpclient.nio.events.HttpClientNIOResponseEvent;
 import org.mobicents.slee.ra.httpclient.nio.ratype.HttpClientNIORequestActivity;
 import org.mobicents.slee.ra.httpclient.nio.ratype.HttpClientNIOResourceAdaptorSbbInterface;
+
+import javax.slee.Address;
+import javax.slee.facilities.Tracer;
+import javax.slee.resource.*;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 
@@ -39,12 +33,14 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
     private static final String CFG_PROPERTY_HTTP_CLIENT_FACTORY = "HTTP_CLIENT_FACTORY";
     private static final String CFG_PROPERTY_MAX_CONNECTIONS_TOTAL = "MAX_CONNECTIONS_TOTAL";
     private static final String CFG_PROPERTY_DEFAULT_MAX_CONNECTIONS_PER_ROUTE = "DEFAULT_MAX_CONNECTIONS_PER_ROUTE";
+    private static final String CFG_PROPERTY_DEFAULT_SOCKET_TIMEOUT = "DEFAULT_SOCKET_TIMEOUT";
+    private static final String CFG_PROPERTY_DEFAULT_CONNECT_TIMEOUT = "DEFAULT_CONNECT_TIMEOUT";
 
     protected ResourceAdaptorContext resourceAdaptorContext;
     private ConcurrentHashMap<HttpClientNIORequestActivityHandle, HttpClientNIORequestActivity> activities;
     private HttpClientNIOResourceAdaptorSbbInterface sbbInterface;
     private Tracer tracer;
-    protected HttpAsyncClient httpclient;
+    protected HttpAsyncClient httpAsyncClient;
     protected volatile boolean isActive = false;
 
     // caching the only event this ra fires
@@ -52,6 +48,8 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
 
     private int maxTotal;
     private int defaultMaxPerRoute;
+    private int connectTimeout;
+    private int socketTimeout;
 
     // configuration
     private HttpAsyncClientFactory httpClientFactory;
@@ -98,6 +96,8 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
             this.maxTotal = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
             this.defaultMaxPerRoute = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_MAX_CONNECTIONS_PER_ROUTE)
                     .getValue();
+            this.connectTimeout = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_CONNECT_TIMEOUT).getValue();
+            this.socketTimeout = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_SOCKET_TIMEOUT).getValue();
         }
     }
 
@@ -110,17 +110,16 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
         activities = new ConcurrentHashMap<HttpClientNIORequestActivityHandle, HttpClientNIORequestActivity>();
         try {
             if (httpClientFactory != null) {
-                httpclient = httpClientFactory.newHttpAsyncClient();
+                httpAsyncClient = httpClientFactory.newHttpAsyncClient();
             } else {
-                DefaultConnectingIOReactor ioreactor = new DefaultConnectingIOReactor();
-                PoolingClientAsyncConnectionManager connMgr = new PoolingClientAsyncConnectionManager(ioreactor);
-
-                connMgr.setMaxTotal(this.maxTotal);
-                connMgr.setDefaultMaxPerRoute(this.defaultMaxPerRoute);
-
-                httpclient = new DefaultHttpAsyncClient(connMgr);
+                httpAsyncClient = buildHttpAsyncClient();
             }
-            httpclient.start();
+
+            // Can't be sure whether factory produced closeable client or some specialization of AbstractHttpAsyncClient
+            if (httpAsyncClient instanceof CloseableHttpAsyncClient) {
+                ((CloseableHttpAsyncClient) httpAsyncClient).start();
+            }
+
             isActive = true;
             if (tracer.isInfoEnabled()) {
                 tracer.info(String.format("HttpClientNIOResourceAdaptor=%s entity activated.",
@@ -150,11 +149,15 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
         activities.clear();
         activities = null;
         try {
-            this.httpclient.getConnectionManager().shutdown();
+            if (httpAsyncClient instanceof  CloseableHttpAsyncClient) {
+                ((CloseableHttpAsyncClient) httpAsyncClient).close();
+            }
+
+
         } catch (IOException e) {
             tracer.severe("Failed to complete http client shutdown", e);
         }
-        this.httpclient = null;
+        this.httpAsyncClient = null;
     }
 
     /*
@@ -201,14 +204,26 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
             }
         } else {
             try {
-                Integer i = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
-                if (i < 1) {
+                Integer j = (Integer) properties.getProperty(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL).getValue();
+                if (j < 1) {
                     throw new InvalidConfigurationException(CFG_PROPERTY_MAX_CONNECTIONS_TOTAL + " must be > 0");
                 }
 
-                Integer j = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_MAX_CONNECTIONS_PER_ROUTE).getValue();
+                j = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_MAX_CONNECTIONS_PER_ROUTE).getValue();
                 if (j < 1) {
                     throw new InvalidConfigurationException(CFG_PROPERTY_DEFAULT_MAX_CONNECTIONS_PER_ROUTE
+                            + " must be > 0");
+                }
+
+                j  = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_CONNECT_TIMEOUT).getValue();
+                if (j < 1) {
+                    throw new InvalidConfigurationException(CFG_PROPERTY_DEFAULT_CONNECT_TIMEOUT
+                            + " must be > 0");
+                }
+
+                j = (Integer) properties.getProperty(CFG_PROPERTY_DEFAULT_SOCKET_TIMEOUT).getValue();
+                if (j < 1) {
+                    throw new InvalidConfigurationException(CFG_PROPERTY_DEFAULT_SOCKET_TIMEOUT
                             + " must be > 0");
                 }
             } catch (InvalidConfigurationException e) {
@@ -278,7 +293,7 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
      */
     public Object getResourceAdaptorInterface(String arg0) {
         return sbbInterface;
-    };
+    }
 
     /*
      * (non-Javadoc)
@@ -483,6 +498,33 @@ public class HttpClientNIOResourceAdaptor implements ResourceAdaptor {
         } catch (Throwable e) {
             tracer.severe(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Creates an instance of async http client.
+     */
+    private HttpAsyncClient buildHttpAsyncClient() throws IOReactorException {
+        // Create I/O reactor configuration
+        IOReactorConfig ioReactorConfig = IOReactorConfig.custom()
+                .setConnectTimeout(connectTimeout)
+                .setSoTimeout(socketTimeout)
+                .build();
+
+        // Create a custom I/O reactor
+        ConnectingIOReactor ioReactor = new DefaultConnectingIOReactor(ioReactorConfig);
+
+        // Create a connection manager with simple configuration.
+        PoolingNHttpClientConnectionManager connManager = new PoolingNHttpClientConnectionManager(ioReactor);
+
+        // Configure total max or per route limits for persistent connections
+        // that can be kept in the pool or leased by the connection manager.
+        connManager.setMaxTotal(maxTotal);
+        connManager.setDefaultMaxPerRoute(defaultMaxPerRoute);
+
+        return httpAsyncClient = HttpAsyncClients.custom()
+                .useSystemProperties()
+                .setConnectionManager(connManager)
+                .build();
     }
 
 }

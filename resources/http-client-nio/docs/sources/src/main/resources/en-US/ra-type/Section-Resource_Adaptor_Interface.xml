@@ -37,15 +37,6 @@ public interface HttpClientNIOResourceAdaptorSbbInterface {
 	<variablelist>
 		<varlistentry>
 			<term>
-				The	<literal>getHttpClientParams()</literal> method:
-			</term>
-			<listitem>
-				<para>Retrieves the params from the client managed by the RA.</para>
-			</listitem>
-		</varlistentry>
-
-		<varlistentry>
-			<term>
 				The <literal>execute(HttpUriRequest, HttpContext, Object)</literal>	method:
 			</term>
 			<listitem>

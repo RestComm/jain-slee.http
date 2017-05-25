@@ -49,11 +49,14 @@ import net.java.client.slee.resource.http.HttpClientActivity;
 import net.java.client.slee.resource.http.HttpClientResourceAdaptorSbbInterface;
 import net.java.client.slee.resource.http.event.ResponseEvent;
 
+import org.apache.http.HeaderElement;
+import org.apache.http.HeaderElementIterator;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
@@ -61,8 +64,11 @@ import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
+import org.apache.http.message.BasicHeaderElementIterator;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.SyncBasicHttpParams;
+import org.apache.http.protocol.ExecutionContext;
+import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
@@ -101,6 +107,8 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
     private int maxTotal;
     private Map<HttpRoute, Integer> maxForRoutes;
     private HttpClientFactory httpClientFactory;
+
+    private IdleConnectionMonitorThread idleConnectionMonitorThread = null;
 
     // LIFECYCLE METHODS
 
@@ -206,6 +214,33 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
                 threadSafeClientConnManager.setMaxPerRoute(entry.getKey(), entry.getValue());
             }
             httpclient = new DefaultHttpClient(threadSafeClientConnManager, params);
+
+            ((DefaultHttpClient) httpclient).setKeepAliveStrategy(new ConnectionKeepAliveStrategy() {
+
+                public long getKeepAliveDuration(HttpResponse response, HttpContext context) {
+                    // Honor 'keep-alive' header
+                    HeaderElementIterator it = new BasicHeaderElementIterator(response
+                            .headerIterator(HTTP.CONN_KEEP_ALIVE));
+                    while (it.hasNext()) {
+                        HeaderElement he = it.nextElement();
+                        String param = he.getName();
+                        String value = he.getValue();
+                        if (value != null && param.equalsIgnoreCase("timeout")) {
+                            try {
+                                return Long.parseLong(value) * 1000;
+                            } catch (NumberFormatException ignore) {
+                            }
+                        }
+                    }
+
+                    // otherwise keep alive for 30 seconds
+                    return 30 * 1000;
+                }
+
+            });
+
+            this.idleConnectionMonitorThread = new IdleConnectionMonitorThread(threadSafeClientConnManager, this.tracer);
+            this.idleConnectionMonitorThread.start();
         }
         isActive = true;
 
@@ -222,6 +257,10 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
      */
     public void raStopping() {
         this.isActive = false;
+
+        if (this.idleConnectionMonitorThread != null) {
+            this.idleConnectionMonitorThread.shutdown();
+        }
     }
 
     /*
@@ -237,6 +276,7 @@ public class HttpClientResourceAdaptor implements ResourceAdaptor {
         executorService = null;
 
         this.httpclient.getConnectionManager().shutdown();
+        this.idleConnectionMonitorThread = null;
 
         this.httpclient = null;
     }

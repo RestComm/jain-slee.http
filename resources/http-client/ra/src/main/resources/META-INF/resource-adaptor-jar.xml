@@ -39,5 +39,10 @@
 			<config-property-type>java.lang.String</config-property-type>
 			<config-property-value></config-property-value>
 		</config-property>
+		<config-property>
+			<description>Configures the default value for client to override default limit of max concurrent connections for route, it must be overrided by MAX_CONNECTIONS_FOR_ROUTES</description>
+			<config-property-name>DEFAULT_MAX_FOR_ROUTE</config-property-name>
+			<config-property-type>java.lang.Integer</config-property-type>
+		</config-property>
 	</resource-adaptor>
 </resource-adaptor-jar>

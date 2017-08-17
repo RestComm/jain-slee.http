@@ -34,6 +34,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>restcomm-slee-http-client-ra-DU-${project.version}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.mobicents.tools</groupId>

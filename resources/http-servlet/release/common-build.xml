@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="Release_build" default="deploy">
+	<property environment="system" />
+	<property name="home" value="${ant.file.Release_build}/../" />
+	<property name="jboss.home" value="${system.JBOSS_HOME}" />
+
+
+	<property name="jboss.modules.path" value="${jboss.home}/modules/system/layers/base" />
+	<property name="restcomm-http.path" value="${jboss.modules.path}/org/restcomm/slee/resource/http/common/main" />
+
+	<path id="xmltask.path">
+		<pathelement path="${basedir}/xmltask.jar" />
+	</path>
+
+	<taskdef name="xmltask" classpathref="xmltask.path" classname="com.oopsconsultancy.xmltask.ant.XmlTask" />
+
+	<target name="deploy">
+
+		<xmltask source="${jboss.modules.path}/org/telestax/slee/container/lib/main/module.xml" dest="${jboss.modules.path}/org/telestax/slee/container/lib/main/module.xml">
+			<remove path="/:module/:dependencies/:module[@name='org.restcomm.slee.resource.http.common']" />
+			<insert path="/:module/:dependencies/:module[last()]" position="after">
+				<![CDATA[<module xmlns="urn:jboss:module:1.0" name="org.restcomm.slee.resource.http.common" export="true"/>]]>
+		            </insert>
+		</xmltask>
+
+		<copy overwrite="true" todir="${restcomm-http.path}">
+			<fileset dir="./common">
+				<include name="**" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="undeploy">
+		<delete dir="${restcomm-http.path}" />
+
+		<xmltask source="${jboss.modules.path}/org/telestax/slee/container/lib/main/module.xml" dest="${jboss.modules.path}/org/telestax/slee/container/lib/main/module.xml">
+			<remove path="/:module/:dependencies/:module[@name='org.restcomm.slee.resource.http.common']" />
+		</xmltask>
+
+	</target>
+
+</project>

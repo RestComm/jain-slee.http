@@ -52,6 +52,7 @@
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<build>
+				<finalName>restcomm-slee-enabler-rest-client-DU-${project.version}</finalName>
 				<plugins>					
 					<plugin>
 						<artifactId>maven-antrun-plugin</artifactId>

@@ -22,7 +22,7 @@
 		<module>ra</module>
 		<module>du</module>
 	</modules>
-	
+
 	<properties>
 		<servlet-name>restcomm</servlet-name>
 		<docs.profile>restcomm</docs.profile>
@@ -30,19 +30,19 @@
 		<docs.ra.dirname>http-servlet</docs.ra.dirname>
 		<docs.bookid>HttpServlet</docs.bookid>
 	</properties>
-	
+
 	<build>
 		<plugins>
 			<plugin>
 				<artifactId>maven-eclipse-plugin</artifactId>
-   				<groupId>org.mobicents.tools</groupId>
+				<groupId>org.mobicents.tools</groupId>
 				<inherited>false</inherited>
 				<executions />
 				<configuration>
 					<excludePoms />
 					<classpathExcludes>
 						<exclude>xml-apis:xml-apis</exclude>
-						<exclude>jtidy:jtidy</exclude>																		
+						<exclude>jtidy:jtidy</exclude>
 					</classpathExcludes>
 					<resolveTransitiveDependencies>true</resolveTransitiveDependencies>
 					<eclipseProjectName>slee-ra-http-servlet</eclipseProjectName>
@@ -50,7 +50,7 @@
 			</plugin>
 		</plugins>
 	</build>
-	
+
 	<profiles>
 		<profile>
 			<id>release</id>
@@ -64,8 +64,8 @@
 			<modules>
 				<module>docs</module>
 				<module>release</module>
-			</modules>				
+			</modules>
 		</profile>
 	</profiles>
-	
+
 </project>

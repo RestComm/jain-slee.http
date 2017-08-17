@@ -33,6 +33,7 @@
 	</dependencies>
 
 	<build>
+		<finalName>restcomm-slee-ra-http-client-nio-ra-DU-${project.version}</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.mobicents.tools</groupId>

@@ -20,25 +20,42 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.restcomm.slee.resource.http;
+package org.mobicents.slee.resource.http;
 
-import java.util.UUID;
+import org.restcomm.slee.resource.http.AbstractHttpServletActivity;
+import org.restcomm.slee.resource.http.HttpSessionWrapper;
 
-import net.java.slee.resource.http.HttpServletRequestActivity;
+import net.java.slee.resource.http.HttpSessionActivity;
 
-public class HttpServletRequestActivityImpl extends AbstractHttpServletActivity implements HttpServletRequestActivity {
-	
+/**
+ * 
+ * @author amit.bhayani
+ * @author martins
+ * 
+ */
+public class HttpSessionActivityImpl extends AbstractHttpServletActivity implements HttpSessionActivity {
+    
+    private final HttpSessionWrapper httpSessionWrapper;
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-		
-	public HttpServletRequestActivityImpl() {
-		super(UUID.randomUUID().toString());
-	}
 	
-	public String getRequestID() {
+	public HttpSessionActivityImpl(HttpSessionWrapper httpSessionWrapper) {
+        super(httpSessionWrapper.getId());
+        this.httpSessionWrapper = httpSessionWrapper;
+    }
+	
+	
+	public String getSessionId() {
 		return id;
 	}
 
+
+    @Override
+    public void endActivity() {
+        this.httpSessionWrapper.invalidate();
+    }
+	
 }

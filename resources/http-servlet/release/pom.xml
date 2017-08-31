@@ -40,7 +40,7 @@
 												<include name="*.war" />
 											</fileset>
 										</copy>
-										<copy overwrite="true" todir="${release.dir}/extra/telscale-http/common">
+										<copy overwrite="true" todir="${release.dir}/extra/restcomm-http/common">
 											<fileset dir="${basedir}/../common/target">
 												<include name="*.jar" />
 												<include name="*.xml" />
@@ -56,7 +56,7 @@
 											</filterset>
 										</copy>
 										<copy overwrite="true" file="${basedir}/common-build.xml"
-											tofile="${release.dir}/extra/telscale-http/build.xml">
+											tofile="${release.dir}/extra/restcomm-http/build.xml">
 											<filterset>
 												<filter token="JBOSS.PATH" value="${jboss.path}" />
 											</filterset>

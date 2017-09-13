@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>org.mobicents.servers.jainslee</groupId>
 		<artifactId>restcomm-slee-parent</artifactId>
-		<version>7.0.11</version>
+		<version>7.1.15</version>
 	</parent>
 
 	<groupId>org.mobicents.servers.jainslee.http</groupId>
 	<artifactId>restcomm-slee-http</artifactId>
-	<version>7.0.0-SNAPSHOT</version>
+	<version>7.1.25</version>
 
 	<packaging>pom</packaging>
 

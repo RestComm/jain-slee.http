@@ -22,6 +22,10 @@
 		<module>examples/http-client-nio-demo</module>
 	</modules>
 
+	<properties>
+		<restcomm.jain.slee.version>2.9.147</restcomm.jain.slee.version>
+	</properties>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>

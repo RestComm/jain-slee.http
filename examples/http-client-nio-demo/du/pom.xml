@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>slee-example-http-client-nio-demo</artifactId>
 		<groupId>org.mobicents.slee.examples</groupId>
-		<version>7.0.0-SNAPSHOT</version>
+		<version>7.2.0-24</version>
 	</parent>
 	
 	<artifactId>slee-example-http-client-nio-demo-DU</artifactId>

@@ -17,6 +17,7 @@
 	<properties>
 		<maven.du.plugin.version>4.0.2</maven.du.plugin.version>
 		<restcomm.jain.slee.version>7.1.82</restcomm.jain.slee.version>
+		<restcomm.load.balancer.version>10.1.228</restcomm.load.balancer.version>
 	</properties>
 
 	<modules>

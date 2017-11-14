@@ -29,6 +29,36 @@
             <config-property-value>${servlet-name}</config-property-value>
         </config-property>
         
+        <!-- <config-property>
+            <config-property-name>org.mobicents.resources.http-servlet-ra.LOCAL_HTTP_PORT</config-property-name>
+            <config-property-type>java.lang.Integer</config-property-type>
+            <config-property-value>8080</config-property-value>
+        </config-property> -->
+        <config-property>
+            <config-property-name>org.mobicents.resources.http-servlet-ra.LOCAL_HTTP_ADDRESS</config-property-name>
+            <config-property-type>java.lang.String</config-property-type>
+            <config-property-value></config-property-value>
+        </config-property>
+        <!--config-property>
+            <config-property-name>org.mobicents.resources.http-servlet-ra.LOCAL_SSL_PORT</config-property-name>
+            <config-property-type>java.lang.Integer</config-property-type>
+            <config-property-value></config-property-value>
+        </config-property-->
+        <config-property>
+            <config-property-name>org.mobicents.resources.http-servlet-ra.BALANCERS</config-property-name>
+            <config-property-type>java.lang.String</config-property-type>
+            <config-property-value></config-property-value>
+        </config-property>
+        <config-property>
+            <config-property-name>org.mobicents.resources.http-servlet-ra.LoadBalancerHeartBeatingServiceClassName</config-property-name>
+            <config-property-type>java.lang.String</config-property-type>
+            <config-property-value>org.restcomm.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingServiceImpl</config-property-value>
+        </config-property>
+        <config-property>
+            <config-property-name>org.mobicents.resources.http-servlet-ra.HEARTBEAT_INTERVAL</config-property-name>
+            <config-property-type>java.lang.Integer</config-property-type>
+            <config-property-value>5000</config-property-value>
+        </config-property>
     </resource-adaptor>
     
     <security-permissions>

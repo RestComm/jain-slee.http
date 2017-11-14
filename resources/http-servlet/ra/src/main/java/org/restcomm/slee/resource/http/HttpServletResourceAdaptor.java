@@ -21,6 +21,15 @@
  */
 package org.restcomm.slee.resource.http;
 
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.util.Properties;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.slee.Address;
@@ -42,6 +51,8 @@ import javax.slee.resource.SleeEndpoint;
 import net.java.slee.resource.http.events.HttpServletRequestEvent;
 
 import org.restcomm.slee.resource.http.events.HttpServletRequestEventImpl;
+import org.restcomm.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingService;
+import org.restcomm.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingServiceImpl;
 
 /**
  *
@@ -79,6 +90,10 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      */
     private String name;
 
+    
+    private Properties loadBalancerHeartBeatingServiceProperties;
+    private HttpLoadBalancerHeartBeatingService loadBalancerHeartBeatingService;
+    
     /**
      *
      */
@@ -134,6 +149,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      */
     public void raConfigure(ConfigProperties configProperties) {
         name = (String) configProperties.getProperty(NAME_CONFIG_PROPERTY).getValue();
+        loadBalancerHeartBeatingServiceProperties = prepareHeartBeatingServiceProperties(configProperties);
     }
 
     /*
@@ -145,6 +161,12 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
     public void raActive() {
         // register in manager
         HttpServletResourceEntryPointManager.putResourceEntryPoint(name, this);
+        try {
+        	loadBalancerHeartBeatingService = initHeartBeatingService();
+            loadBalancerHeartBeatingService.start();
+        } catch(Exception e) {
+        	tracer.severe("An error occured while starting Load balancer heartbeating service: " + e.getMessage(), e);
+        }
     }
 
     /*
@@ -164,6 +186,12 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
     public void raInactive() {
         // unregister from manager
         HttpServletResourceEntryPointManager.removeResourceEntryPoint(name);
+        try {
+        	loadBalancerHeartBeatingService.stop();
+            loadBalancerHeartBeatingService = null;
+        } catch(Exception e) {
+        	tracer.severe("Error while stopping RAs LB heartbeating service " + this.resourceAdaptorContext.getEntityName(), e);
+        }
     }
 
     /*
@@ -174,6 +202,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      */
     public void raUnconfigure() {
         name = null;
+        loadBalancerHeartBeatingServiceProperties = null;
     }
 
     /*
@@ -212,8 +241,105 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
             // don't think this can happen, but just to be sure
             throw new InvalidConfigurationException("name property must not have a null value");
         }
+        
+        try {
+        	checkAddressAndPortProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, configProperties);
+        	checkAddressAndPortProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, configProperties);
+        	checkBalancersProperty(configProperties);
+        	checkHeartBeatingServiceClassNameProperty(configProperties);
+        } catch (Throwable e) {
+			throw new InvalidConfigurationException(e.getMessage(),e);
+		}
     }
 
+    private void checkAddressAndPortProperty(String portPropertyName, ConfigProperties properties) throws IOException {
+    	ConfigProperties.Property property = properties.getProperty(portPropertyName);
+    	if(property !=null) {
+    		Integer localHttpPort = (Integer) property.getValue();
+        	if(localHttpPort != null && localHttpPort != -1) {
+            	String localHttpAddress = (String) properties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS).getValue();
+            	if(localHttpAddress !=null && !localHttpAddress.isEmpty()) {
+            		InetSocketAddress sockAddress = new InetSocketAddress(localHttpAddress, localHttpPort);
+            		checkSocketAddress(sockAddress);
+            	}
+        	}
+    	}
+    }
+    
+    private void checkSocketAddress(InetSocketAddress address) throws IOException {
+    	Socket s = new Socket();
+    	try {
+    		s.connect(address);
+    	} finally {
+    		s.close();
+    	}
+    }
+    
+    private void checkBalancersProperty(ConfigProperties properties) {
+    	String balancers = (String) properties.getProperty(HttpLoadBalancerHeartBeatingService.BALANCERS).getValue();
+    	if(balancers !=null && !balancers.isEmpty()) {
+    		String[] segments = balancers.split(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS_CHAR_SEPARATOR);
+    		for(String segment : segments) {
+    			String [] addressAndPort = segment.split(HttpLoadBalancerHeartBeatingServiceImpl.BALANCER_PORT_CHAR_SEPARATOR);
+    			Integer.parseInt(addressAndPort[1]);
+    		}
+    	}
+    }
+    
+    private void checkHeartBeatingServiceClassNameProperty(ConfigProperties properties) throws ClassNotFoundException {
+    	String httpBalancerHeartBeatServiceClassName = (String) properties.getProperty(HttpLoadBalancerHeartBeatingService.LB_HB_SERVICE_CLASS_NAME).getValue();
+    	if(httpBalancerHeartBeatServiceClassName !=null && !httpBalancerHeartBeatServiceClassName.isEmpty()) {
+     		Class.forName(httpBalancerHeartBeatServiceClassName);
+    	}
+    }
+    
+    private HttpLoadBalancerHeartBeatingService initHeartBeatingService() throws Exception {
+    	String httpBalancerHeartBeatServiceClassName = (String) loadBalancerHeartBeatingServiceProperties.getProperty(HttpLoadBalancerHeartBeatingService.LB_HB_SERVICE_CLASS_NAME);
+    	HttpLoadBalancerHeartBeatingService service = (HttpLoadBalancerHeartBeatingService)Class.forName(httpBalancerHeartBeatServiceClassName).newInstance();
+    	MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+    	String stackName = this.name;
+    	service.init(resourceAdaptorContext,mBeanServer, stackName, loadBalancerHeartBeatingServiceProperties);
+    	return service;
+    }
+    
+    private Properties prepareHeartBeatingServiceProperties(ConfigProperties configProperties) {
+    	Properties properties = new Properties();
+    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, prepareLocalHttpPortProperty(configProperties));
+    	ConfigProperties.Property  sslPortProperty = configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT);
+    	if(sslPortProperty != null) {
+    		properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, sslPortProperty.getValue().toString());    		
+    	}
+    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS, prepareLocalHttpAddressProperty(configProperties));
+    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS, (String)configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS).getValue());
+    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL, (String)configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL).getValue().toString());
+    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME, (String)configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME).getValue());
+    	return properties;
+    }
+    
+    private String prepareLocalHttpPortProperty(ConfigProperties configProperties) {
+    	ConfigProperties.Property localPortProperty = configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT);
+    	String localHttpPort = null;
+    	if(localPortProperty == null || localPortProperty.getValue() == null) {
+    		localHttpPort = getJBossPort();
+    	}
+    	else {
+    		localHttpPort = String.valueOf(localPortProperty.getValue());
+    	}
+    	return localHttpPort;
+    }
+    
+    private String prepareLocalHttpAddressProperty(ConfigProperties configProperties) {
+    	ConfigProperties.Property localAddressProperty = configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS);
+    	String localHttpAddress = null;
+    	if(localAddressProperty == null || localAddressProperty.getValue() == null || ((String) localAddressProperty.getValue()).isEmpty()) {
+    		localHttpAddress = getJBossAddress();
+    	}
+    	else {
+    		localHttpAddress = (String) localAddressProperty.getValue();
+    	}
+    	return localHttpAddress;
+    }
+    
     /*
      * (non-Javadoc)
      * 
@@ -492,4 +618,36 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
     public void onSessionTerminated(HttpSessionWrapper httpSessionWrapper) {
         endActivity(new HttpSessionActivityImpl(httpSessionWrapper));
     }
+    
+    private String getJBossAddress() {
+		String address = null;
+		Object inetAddress = null;
+		try {
+			inetAddress = ManagementFactory.getPlatformMBeanServer()
+					.getAttribute(new ObjectName("jboss.as:interface=public"), "inet-address");			
+		} catch (Exception e) {
+		}
+
+		if (inetAddress != null) {
+			address = inetAddress.toString();
+		}
+
+		return address;
+	}
+    
+    private String getJBossPort() {
+		String port = null;
+		Object httpPort = null;
+		try {
+			httpPort = ManagementFactory.getPlatformMBeanServer()
+					.getAttribute(new ObjectName("jboss.as:socket-binding-group=standard-sockets,socket-binding=http"), "port");			
+		} catch (Exception e) {
+		}
+
+		if (httpPort != null) {
+			port = httpPort.toString();
+		}
+
+		return port;
+	}
 }

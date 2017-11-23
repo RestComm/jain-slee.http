@@ -1,0 +1,47 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.mobicents.resources</groupId>
+		<artifactId>http-servlet-parent</artifactId>
+		<version>2.9.0-SNAPSHOT</version>
+	</parent>
+	
+	<artifactId>http-servlet-library</artifactId>
+	<name>Restcomm :: Resources :: ${project.artifactId}</name>
+
+	<dependencies>		
+		<dependency>
+			<groupId>org.mobicents.tools</groupId>
+			<artifactId>sip-balancer-jar</artifactId>
+			<version>${restcomm.load.balancer.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.mobicents.tools</groupId>
+			<artifactId>heartbeat-api</artifactId>
+			<version>${restcomm.load.balancer.version}</version>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.mobicents.tools</groupId>
+				<artifactId>maven-library-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>copy-dependencies</goal>
+							<goal>generate-descriptor</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<library-name>http</library-name>
+					<library-vendor>org.mobicents</library-vendor>
+					<library-version>1.0</library-version>
+				</configuration>
+			</plugin>
+		</plugins>
+</build>
+</project>

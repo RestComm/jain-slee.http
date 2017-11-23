@@ -48,7 +48,6 @@ public class HttpSessionActivityImpl extends AbstractHttpServletActivity impleme
 		return id;
 	}
 
-	@Override
 	public void endActivity() {
 		this.httpSessionWrapper.invalidate();
 	}

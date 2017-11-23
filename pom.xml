@@ -14,6 +14,12 @@
 
 	<packaging>pom</packaging>
 
+	<properties>
+		<maven.du.plugin.version>3.0.14</maven.du.plugin.version>
+		<restcomm.load.balancer.version>10.1.228</restcomm.load.balancer.version>
+		<restcomm.jain.slee.version>2.9.147</restcomm.jain.slee.version>
+	</properties>
+
 	<modules>
 		<module>resources/http-servlet</module>
 		<module>resources/http-client</module>
@@ -21,10 +27,6 @@
 		<module>enablers/rest-client</module>
 		<module>examples/http-client-nio-demo</module>
 	</modules>
-
-	<properties>
-		<restcomm.jain.slee.version>2.9.147</restcomm.jain.slee.version>
-	</properties>
 
 	<dependencyManagement>
 		<dependencies>

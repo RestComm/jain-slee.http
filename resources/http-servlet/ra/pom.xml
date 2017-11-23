@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
@@ -7,13 +8,13 @@
 		<groupId>org.mobicents.resources</groupId>
 		<version>2.9.0-SNAPSHOT</version>
 	</parent>
-	
+
 	<artifactId>http-servlet-ra</artifactId>
 	<name>Restcomm :: Resources :: ${project.artifactId}</name>
-	
+
 	<dependencies>
 		<dependency>
-            <groupId>${project.groupId}</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>http-servlet-ratype</artifactId>
 			<version>${project.version}</version>
 		</dependency>
@@ -21,9 +22,27 @@
 			<groupId>${project.groupId}</groupId>
 			<artifactId>http-servlet-common</artifactId>
 			<version>${project.version}</version>
+		</dependency>		
+		<dependency>
+			<groupId>org.mobicents.tools</groupId>
+			<artifactId>sip-balancer-jar</artifactId>
+			<version>${restcomm.load.balancer.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mobicents.tools</groupId>
+			<artifactId>heartbeat-api</artifactId>
+			<version>${restcomm.load.balancer.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+    		<groupId>jboss</groupId>
+    		<artifactId>jboss-jmx</artifactId>
+    		<version>4.2.2.GA</version>
+    		<scope>provided</scope>
 		</dependency>
 	</dependencies>
-	
+
 	<build>
 		<resources>
 			<resource>
@@ -32,5 +51,5 @@
 			</resource>
 		</resources>
 	</build>
-	
+
 </project>

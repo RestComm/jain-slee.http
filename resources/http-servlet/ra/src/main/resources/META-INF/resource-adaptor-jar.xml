@@ -47,7 +47,7 @@
         <config-property>
             <config-property-name>org.mobicents.resources.http-servlet-ra.BALANCERS</config-property-name>
             <config-property-type>java.lang.String</config-property-type>
-            <config-property-value>127.0.0.1:3306</config-property-value>
+            <config-property-value></config-property-value>
         </config-property>
         <config-property>
             <config-property-name>org.mobicents.resources.http-servlet-ra.LoadBalancerHeartBeatingServiceClassName</config-property-name>

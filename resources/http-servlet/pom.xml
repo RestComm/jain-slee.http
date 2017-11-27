@@ -22,7 +22,6 @@
 		<module>ratype</module>
 		<module>ra</module>
 		<module>du</module>
-		<module>http-servlet-library</module>
 	</modules>
 	
 	<properties>

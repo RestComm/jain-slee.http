@@ -60,6 +60,8 @@ import org.mobicents.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingSe
 public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletResourceEntryPoint {
 
 	private static final String NAME_CONFIG_PROPERTY = "name";
+	private static final String HTTP_REQUEST_TIMEOUT = "HTTP_REQUEST_TIMEOUT";
+	
 	private ResourceAdaptorContext resourceAdaptorContext;
 	private SleeEndpoint sleeEndpoint;
 	private Tracer tracer;
@@ -89,6 +91,8 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 	 */
 	private String name;
 
+	private Integer httpRequestTimeout;
+	
 	private Properties loadBalancerHeartBeatingServiceProperties;
 	private HttpLoadBalancerHeartBeatingService loadBalancerHeartBeatingService;
 
@@ -150,6 +154,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 	 */
 	public void raConfigure(ConfigProperties configProperties) {
 		name = (String) configProperties.getProperty(NAME_CONFIG_PROPERTY).getValue();
+		httpRequestTimeout = (Integer) configProperties.getProperty(HTTP_REQUEST_TIMEOUT).getValue();
 		try {
 			loadBalancerHeartBeatingServiceProperties = prepareHeartBeatingServiceProperties(configProperties);
 		} catch (InvalidConfigurationException e) {
@@ -210,6 +215,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 	 */
 	public void raUnconfigure() {
 		name = null;
+		httpRequestTimeout = null;
 		loadBalancerHeartBeatingServiceProperties = null;
 	}
 
@@ -708,7 +714,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 				sleeEndpoint.fireEvent(activity, eventType, requestEvent, null, null,
 						EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK);
 				// block thread until event has been processed
-				lock.wait(15000);
+				lock.wait(httpRequestTimeout);
 				// the event was unreferenced or 15s timeout, if the activity is
 				// the request then end it
 				if (sessionWrapper == null) {

@@ -23,7 +23,6 @@ package org.restcomm.slee.resource.http;
 
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Properties;
@@ -62,6 +61,8 @@ import org.restcomm.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingSer
 public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletResourceEntryPoint {
 
     private static final String NAME_CONFIG_PROPERTY = "name";
+    private static final String HTTP_REQUEST_TIMEOUT = "HTTP_REQUEST_TIMEOUT";
+    
     private ResourceAdaptorContext resourceAdaptorContext;
     private SleeEndpoint sleeEndpoint;
     private Tracer tracer;
@@ -90,6 +91,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      */
     private String name;
 
+    private Integer httpRequestTimeout;
     
     private Properties loadBalancerHeartBeatingServiceProperties;
     private HttpLoadBalancerHeartBeatingService loadBalancerHeartBeatingService;
@@ -149,7 +151,12 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      */
     public void raConfigure(ConfigProperties configProperties) {
         name = (String) configProperties.getProperty(NAME_CONFIG_PROPERTY).getValue();
-        loadBalancerHeartBeatingServiceProperties = prepareHeartBeatingServiceProperties(configProperties);
+        httpRequestTimeout = (Integer) configProperties.getProperty(HTTP_REQUEST_TIMEOUT).getValue();
+        try {
+			loadBalancerHeartBeatingServiceProperties = prepareHeartBeatingServiceProperties(configProperties);
+		} catch (Exception e) {
+			tracer.severe("Invalid LB Heartbieating service configuration", e);
+		}
     }
 
     /*
@@ -161,11 +168,13 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
     public void raActive() {
         // register in manager
         HttpServletResourceEntryPointManager.putResourceEntryPoint(name, this);
-        try {
-        	loadBalancerHeartBeatingService = initHeartBeatingService();
-            loadBalancerHeartBeatingService.start();
-        } catch(Exception e) {
-        	tracer.severe("An error occured while starting Load balancer heartbeating service: " + e.getMessage(), e);
+        if(loadBalancerHeartBeatingServiceProperties != null) {
+        	try {
+            	loadBalancerHeartBeatingService = initHeartBeatingService();
+                loadBalancerHeartBeatingService.start();
+            } catch(Exception e) {
+            	tracer.severe("An error occured while starting Load balancer heartbeating service: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -186,11 +195,13 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
     public void raInactive() {
         // unregister from manager
         HttpServletResourceEntryPointManager.removeResourceEntryPoint(name);
-        try {
-        	loadBalancerHeartBeatingService.stop();
-            loadBalancerHeartBeatingService = null;
-        } catch(Exception e) {
-        	tracer.severe("Error while stopping RAs LB heartbeating service " + this.resourceAdaptorContext.getEntityName(), e);
+        if(loadBalancerHeartBeatingService != null) {
+        	try {
+            	loadBalancerHeartBeatingService.stop();
+                loadBalancerHeartBeatingService = null;
+            } catch(Exception e) {
+            	tracer.severe("Error while stopping RAs LB heartbeating service " + this.resourceAdaptorContext.getEntityName(), e);
+            }
         }
     }
 
@@ -202,6 +213,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      */
     public void raUnconfigure() {
         name = null;
+        httpRequestTimeout = null;
         loadBalancerHeartBeatingServiceProperties = null;
     }
 
@@ -302,19 +314,74 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
     	return service;
     }
     
-    private Properties prepareHeartBeatingServiceProperties(ConfigProperties configProperties) {
-    	Properties properties = new Properties();
-    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, prepareLocalHttpPortProperty(configProperties));
-    	ConfigProperties.Property  sslPortProperty = configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT);
-    	if(sslPortProperty != null) {
-    		properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, sslPortProperty.getValue().toString());    		
-    	}
-    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS, prepareLocalHttpAddressProperty(configProperties));
-    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS, (String)configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS).getValue());
-    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL, (String)configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL).getValue().toString());
-    	properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME, (String)configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME).getValue());
-    	return properties;
-    }
+    private Properties prepareHeartBeatingServiceProperties(ConfigProperties configProperties)
+			throws InvalidConfigurationException {
+
+		Properties properties = null;
+
+		String localPort = prepareLocalHttpPortProperty(configProperties);
+		String localSslPort = prepareLocalSslProperty(configProperties);
+		String localAddress = prepareLocalHttpAddressProperty(configProperties);
+		String balancers = prepareProperty(configProperties, HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS);
+		String heartbeatingInterval = prepareProperty(configProperties,
+				HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL);
+		String lbHearbeatingServiceClassName = prepareProperty(configProperties,
+				HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME);
+
+		if (balancers != null && !balancers.isEmpty()) {
+
+			if (localAddress == null || localPort == null || lbHearbeatingServiceClassName == null) {
+				StringBuilder sb = new StringBuilder();
+
+				sb.append("Missing one or more required properties.\n");
+				sb.append("Required properties:\n");
+				sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS).append("\n");
+				sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT).append("\n");
+				sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME).append("\n");
+				sb.append("Missing properties:\n");
+				if (localAddress == null) {
+					sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS).append("\n");
+				}
+				if (localPort == null) {
+					sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT).append("\n");
+				}
+				if (lbHearbeatingServiceClassName == null) {
+					sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME).append("\n");
+				}
+				throw new InvalidConfigurationException(sb.toString());
+			}
+			properties = new Properties();
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS, balancers);
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, localPort);
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS, localAddress);
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME,
+					lbHearbeatingServiceClassName);
+			if (localSslPort != null) {
+				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, localSslPort);
+			}
+			if (heartbeatingInterval != null) {
+				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL,
+						heartbeatingInterval);
+			}
+
+		} else if (localAddress != null && localPort != null && lbHearbeatingServiceClassName != null) {
+			balancers = "";
+			properties = new Properties();
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS, balancers);
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, localPort);
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS, localAddress);
+			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME,
+					lbHearbeatingServiceClassName);
+			if (localSslPort != null) {
+				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, localSslPort);
+			}
+			if (heartbeatingInterval != null) {
+				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL,
+						heartbeatingInterval);
+			}
+		}
+		return properties;
+	}
     
     private String prepareLocalHttpPortProperty(ConfigProperties configProperties) {
     	ConfigProperties.Property localPortProperty = configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT);
@@ -327,6 +394,28 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
     	}
     	return localHttpPort;
     }
+    
+    private String prepareLocalSslProperty(ConfigProperties configProperties) {
+		String propertyValue = null;
+		ConfigProperties.Property configProperty = configProperties
+				.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT);
+		if (configProperty != null && configProperty.getValue() != null) {
+			Integer intValue = (Integer) configProperty.getValue();
+			if (intValue > 1) {
+				propertyValue = String.valueOf(intValue);
+			}
+		}
+		return propertyValue;
+	}
+    
+    private String prepareProperty(ConfigProperties configProperties, String propertyName) {
+		String propertyValue = null;
+		ConfigProperties.Property configProperty = configProperties.getProperty(propertyName);
+		if (configProperty != null && configProperty.getValue() != null) {
+			propertyValue = String.valueOf(configProperty.getValue());
+		}
+		return propertyValue;
+	}
     
     private String prepareLocalHttpAddressProperty(ConfigProperties configProperties) {
     	ConfigProperties.Property localAddressProperty = configProperties.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS);
@@ -588,7 +677,7 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
             try {
                 sleeEndpoint.fireEvent(activity, eventType, requestEvent, null, null, EventFlags.REQUEST_EVENT_UNREFERENCED_CALLBACK);
                 // block thread until event has been processed
-                lock.wait(15000);
+                lock.wait(httpRequestTimeout);
                 // the event was unreferenced or 15s timeout, if the activity is the request then end it
                 if (sessionWrapper == null) {
                     endActivity(activity);

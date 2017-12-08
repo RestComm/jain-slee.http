@@ -5,6 +5,7 @@
 		entity-name="HttpServletRA">
 		<properties>
 			<property name="name" type="java.lang.String" value="${servlet-name}" />
+			<property name="HTTP_REQUEST_TIMEOUT" type="java.lang.Integer" value="65000" />
 		</properties>
 		<ra-link name="HttpServletRA" />
 	</ra-entity>

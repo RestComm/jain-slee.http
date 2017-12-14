@@ -151,14 +151,21 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      */
     public void raConfigure(ConfigProperties configProperties) {
         name = (String) configProperties.getProperty(NAME_CONFIG_PROPERTY).getValue();
-        httpRequestTimeout = (Integer) configProperties.getProperty(HTTP_REQUEST_TIMEOUT).getValue();
-        try {
-			loadBalancerHeartBeatingServiceProperties = prepareHeartBeatingServiceProperties(configProperties);
+        configureUpdatableProperties(configProperties);
+    }
+
+    private void configureUpdatableProperties(ConfigProperties configProperties) {
+    	httpRequestTimeout = (Integer) configProperties.getProperty(HTTP_REQUEST_TIMEOUT).getValue();
+    	try {
+        	Properties newProperties = prepareHeartBeatingServiceProperties(configProperties);
+        	if(newProperties != null) {
+        		loadBalancerHeartBeatingServiceProperties = newProperties;
+        	}
 		} catch (Exception e) {
 			tracer.severe("Invalid LB Heartbieating service configuration", e);
 		}
     }
-
+    
     /*
     /*
      * (non-Javadoc)
@@ -435,9 +442,16 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
      * @see javax.slee.resource.ResourceAdaptor#raConfigurationUpdate(javax.slee.resource.ConfigProperties)
      */
     public void raConfigurationUpdate(ConfigProperties configProperties) {
-        throw new UnsupportedOperationException();
+    	validateNameUpdate(configProperties);
+    	configureUpdatableProperties(configProperties);
     }
 
+    private void validateNameUpdate(ConfigProperties configProperties) throws UnsupportedOperationException {
+    	String updateNameValue = (String) configProperties.getProperty(NAME_CONFIG_PROPERTY).getValue();
+    	if(updateNameValue != null && !updateNameValue.equals(this.name))
+    		throw new UnsupportedOperationException("name property update is not supported!");
+    }
+    
     // event filtering methods
 
     /*

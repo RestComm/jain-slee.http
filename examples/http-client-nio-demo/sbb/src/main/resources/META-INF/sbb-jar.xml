@@ -7,13 +7,13 @@
 	<sbb>
 
 		<sbb-name>HttpClientNIODemo</sbb-name>
-		<sbb-vendor>org.mobicents</sbb-vendor>
+		<sbb-vendor>org.restcomm</sbb-vendor>
 		<sbb-version>1.0</sbb-version>
 		
 		<sbb-classes>
 			<sbb-abstract-class>
 				<sbb-abstract-class-name>
-					org.mobicents.slee.ra.httpclient.nio.demo.HttpClientNIODemoSbb
+					org.restcomm.slee.ra.httpclient.nio.demo.HttpClientNIODemoSbb
 				</sbb-abstract-class-name>
 			</sbb-abstract-class>
 		</sbb-classes>
@@ -34,7 +34,7 @@
 			<event-name>HttpClientNIOResponseEvent</event-name>
 			<event-type-ref>
 				<event-type-name>HttpClientNIOResponseEvent</event-type-name>
-				<event-type-vendor>org.mobicents</event-type-vendor>
+				<event-type-vendor>org.restcomm</event-type-vendor>
 				<event-type-version>1.0</event-type-version>
 			</event-type-ref>
 			<initial-event-select variable="ActivityContext" />
@@ -46,7 +46,7 @@
 					HttpClientNIO
 				</resource-adaptor-type-name>
 				<resource-adaptor-type-vendor>
-					org.mobicents
+					org.restcomm
 				</resource-adaptor-type-vendor>
 				<resource-adaptor-type-version>
 					2.0

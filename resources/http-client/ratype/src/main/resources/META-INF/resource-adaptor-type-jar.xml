@@ -6,7 +6,7 @@
 	<resource-adaptor-type>
 		<description>HTTP Client Resource Adaptor Type</description>
 		<resource-adaptor-type-name>HttpClientResourceAdaptorType</resource-adaptor-type-name>
-		<resource-adaptor-type-vendor>org.mobicents</resource-adaptor-type-vendor>
+		<resource-adaptor-type-vendor>org.restcomm</resource-adaptor-type-vendor>
 		<resource-adaptor-type-version>4.0</resource-adaptor-type-version>
 		<resource-adaptor-type-classes>
 			<activity-type>

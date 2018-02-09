@@ -5,7 +5,7 @@
 	<!-- REQUEST EVENTS -->
     <library-ref>
         <library-name>http</library-name>
-        <library-vendor>org.mobicents</library-vendor>
+        <library-vendor>org.restcomm</library-vendor>
         <library-version>1.0</library-version>
     </library-ref>
     

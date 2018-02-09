@@ -6,19 +6,19 @@
    <resource-adaptor id="http-servlet-ra_1.0.00">
        	<description>Http Servlet RA 1.0.00 resource adaptor</description>
        	<resource-adaptor-name>HttpServletResourceAdaptor</resource-adaptor-name>
-       	<resource-adaptor-vendor>org.mobicents</resource-adaptor-vendor>
+       	<resource-adaptor-vendor>org.restcomm</resource-adaptor-vendor>
        	<resource-adaptor-version>1.0</resource-adaptor-version>
 
        	<resource-adaptor-type-ref>
             <resource-adaptor-type-name>HttpServletResourceAdaptorType</resource-adaptor-type-name>
-			<resource-adaptor-type-vendor>org.mobicents</resource-adaptor-type-vendor>
+			<resource-adaptor-type-vendor>org.restcomm</resource-adaptor-type-vendor>
 			<resource-adaptor-type-version>1.0</resource-adaptor-type-version>
        	</resource-adaptor-type-ref>
 
 		<resource-adaptor-classes>
 			<resource-adaptor-class supports-active-reconfiguration="True">
                 <resource-adaptor-class-name>
-                    org.mobicents.slee.resource.http.HttpServletResourceAdaptor
+                    org.restcomm.slee.resource.http.HttpServletResourceAdaptor
                 </resource-adaptor-class-name>
             </resource-adaptor-class>
         </resource-adaptor-classes>
@@ -35,32 +35,32 @@
 			<config-property-value>65000</config-property-value>
 		</config-property>
         <config-property>
-            <config-property-name>org.mobicents.resources.http-servlet-ra.LOCAL_HTTP_PORT</config-property-name>
+            <config-property-name>org.restcomm.resources.http-servlet-ra.LOCAL_HTTP_PORT</config-property-name>
             <config-property-type>java.lang.Integer</config-property-type>
             <config-property-value>8080</config-property-value>
         </config-property>
         <config-property>
-            <config-property-name>org.mobicents.resources.http-servlet-ra.LOCAL_HTTP_ADDRESS</config-property-name>
+            <config-property-name>org.restcomm.resources.http-servlet-ra.LOCAL_HTTP_ADDRESS</config-property-name>
             <config-property-type>java.lang.String</config-property-type>
             <config-property-value></config-property-value>
         </config-property>
         <config-property>
-            <config-property-name>org.mobicents.resources.http-servlet-ra.LOCAL_SSL_PORT</config-property-name>
+            <config-property-name>org.restcomm.resources.http-servlet-ra.LOCAL_SSL_PORT</config-property-name>
             <config-property-type>java.lang.Integer</config-property-type>
             <config-property-value>-1</config-property-value>
         </config-property>
         <config-property>
-            <config-property-name>org.mobicents.resources.http-servlet-ra.BALANCERS</config-property-name>
+            <config-property-name>org.restcomm.resources.http-servlet-ra.BALANCERS</config-property-name>
             <config-property-type>java.lang.String</config-property-type>
             <config-property-value></config-property-value>
         </config-property>
         <config-property>
-            <config-property-name>org.mobicents.resources.http-servlet-ra.LoadBalancerHeartBeatingServiceClassName</config-property-name>
+            <config-property-name>org.restcomm.resources.http-servlet-ra.LoadBalancerHeartBeatingServiceClassName</config-property-name>
             <config-property-type>java.lang.String</config-property-type>
-            <config-property-value>org.mobicents.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingServiceImpl</config-property-value>
+            <config-property-value>org.restcomm.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingServiceImpl</config-property-value>
         </config-property>
         <config-property>
-            <config-property-name>org.mobicents.resources.http-servlet-ra.HEARTBEAT_INTERVAL</config-property-name>
+            <config-property-name>org.restcomm.resources.http-servlet-ra.HEARTBEAT_INTERVAL</config-property-name>
             <config-property-type>java.lang.Integer</config-property-type>
             <config-property-value>5000</config-property-value>
         </config-property>

@@ -21,12 +21,6 @@
  */
 package org.restcomm.slee.resource.http;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.Properties;
-
-import javax.management.MBeanServer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.slee.Address;
@@ -47,13 +41,10 @@ import javax.slee.resource.SleeEndpoint;
 
 import net.java.slee.resource.http.events.HttpServletRequestEvent;
 
-import org.jboss.mx.util.MBeanServerLocator;
 import org.restcomm.slee.resource.http.HttpServletResourceEntryPoint;
 import org.restcomm.slee.resource.http.HttpServletResourceEntryPointManager;
 import org.restcomm.slee.resource.http.HttpSessionWrapper;
 import org.restcomm.slee.resource.http.events.HttpServletRequestEventImpl;
-import org.restcomm.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingService;
-import org.restcomm.slee.resource.http.heartbeat.HttpLoadBalancerHeartBeatingServiceImpl;
 
 /**
  *
@@ -96,9 +87,6 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 
 	private Integer httpRequestTimeout;
 	
-	private Properties loadBalancerHeartBeatingServiceProperties;
-	private HttpLoadBalancerHeartBeatingService loadBalancerHeartBeatingService;
-
 	/**
 	 *
 	 */
@@ -162,14 +150,6 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 
     private void configureUpdatableProperties(ConfigProperties configProperties) {
     	httpRequestTimeout = (Integer) configProperties.getProperty(HTTP_REQUEST_TIMEOUT).getValue();
-    	try {
-        	Properties newProperties = prepareHeartBeatingServiceProperties(configProperties);
-        	if(newProperties != null) {
-        		loadBalancerHeartBeatingServiceProperties = newProperties;
-        	}
-		} catch (Exception e) {
-			tracer.severe("Invalid LB Heartbieating service configuration", e);
-		}
     }
 
 	/*
@@ -180,15 +160,6 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 	public void raActive() {
 		// register in manager
 		HttpServletResourceEntryPointManager.putResourceEntryPoint(name, this);
-		if (loadBalancerHeartBeatingServiceProperties != null) {
-			try {
-				loadBalancerHeartBeatingService = initHeartBeatingService();
-				loadBalancerHeartBeatingService.start();
-			} catch (Exception e) {
-				tracer.severe("An error occured while starting Load balancer heartbeating service: " + e.getMessage(),
-						e);
-			}
-		}
 	}
 
 	/*
@@ -207,15 +178,6 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 	public void raInactive() {
 		// unregister from manager
 		HttpServletResourceEntryPointManager.removeResourceEntryPoint(name);
-		if (loadBalancerHeartBeatingService != null) {
-			try {
-				loadBalancerHeartBeatingService.stop();
-				loadBalancerHeartBeatingService = null;
-			} catch (Exception e) {
-				tracer.severe("Error while stopping RAs LB heartbeating service "
-						+ this.resourceAdaptorContext.getEntityName(), e);
-			}
-		}
 	}
 
 	/*
@@ -226,7 +188,6 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 	public void raUnconfigure() {
 		name = null;
 		httpRequestTimeout = null;
-		loadBalancerHeartBeatingServiceProperties = null;
 	}
 
 	/*
@@ -266,189 +227,6 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 			// don't think this can happen, but just to be sure
 			throw new InvalidConfigurationException("name property must not have a null value");
 		}
-
-		try {
-			checkAddressAndPortProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, configProperties);
-			checkAddressAndPortProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, configProperties);
-			checkBalancersProperty(configProperties);
-			checkHeartBeatingServiceClassNameProperty(configProperties);
-		} catch (Throwable e) {
-			throw new InvalidConfigurationException(e.getMessage(), e);
-		}
-	}
-
-	private void checkAddressAndPortProperty(String portPropertyName, ConfigProperties properties) throws IOException {
-		ConfigProperties.Property property = properties.getProperty(portPropertyName);
-		if (property != null) {
-			Integer localHttpPort = (Integer) property.getValue();
-			if (localHttpPort != null && localHttpPort != -1) {
-				String localHttpAddress = (String) properties
-						.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS).getValue();
-				if (localHttpAddress != null && !localHttpAddress.isEmpty()) {
-					InetSocketAddress sockAddress = new InetSocketAddress(localHttpAddress, localHttpPort);
-					checkSocketAddress(sockAddress);
-				}
-			}
-		}
-	}
-
-	private void checkSocketAddress(InetSocketAddress address) throws IOException {
-		Socket s = new Socket();
-		try {
-			s.connect(address);
-		} finally {
-			s.close();
-		}
-	}
-
-	private void checkBalancersProperty(ConfigProperties properties) {
-		String balancers = (String) properties.getProperty(HttpLoadBalancerHeartBeatingService.BALANCERS).getValue();
-		if (balancers != null && !balancers.isEmpty()) {
-			String[] segments = balancers.split(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS_CHAR_SEPARATOR);
-			for (String segment : segments) {
-				String[] addressAndPort = segment
-						.split(HttpLoadBalancerHeartBeatingServiceImpl.BALANCER_PORT_CHAR_SEPARATOR);
-				Integer.parseInt(addressAndPort[1]);
-			}
-		}
-	}
-
-	private void checkHeartBeatingServiceClassNameProperty(ConfigProperties properties) throws ClassNotFoundException {
-		String httpBalancerHeartBeatServiceClassName = (String) properties
-				.getProperty(HttpLoadBalancerHeartBeatingService.LB_HB_SERVICE_CLASS_NAME).getValue();
-		if (httpBalancerHeartBeatServiceClassName != null && !httpBalancerHeartBeatServiceClassName.isEmpty()) {
-			Class.forName(httpBalancerHeartBeatServiceClassName);
-		}
-	}
-
-	private HttpLoadBalancerHeartBeatingService initHeartBeatingService() throws Exception {
-		String httpBalancerHeartBeatServiceClassName = (String) loadBalancerHeartBeatingServiceProperties
-				.getProperty(HttpLoadBalancerHeartBeatingService.LB_HB_SERVICE_CLASS_NAME);
-		HttpLoadBalancerHeartBeatingService service = (HttpLoadBalancerHeartBeatingService) Class
-				.forName(httpBalancerHeartBeatServiceClassName).newInstance();
-		MBeanServer mBeanServer = MBeanServerLocator.locateJBoss();
-		String stackName = this.name;
-		service.init(resourceAdaptorContext, mBeanServer, stackName, loadBalancerHeartBeatingServiceProperties);
-		return service;
-	}
-
-	private Properties prepareHeartBeatingServiceProperties(ConfigProperties configProperties)
-			throws InvalidConfigurationException {
-
-		Properties properties = null;
-
-		String localPort = prepareLocalHttpPortProperty(configProperties);
-		String localSslPort = prepareLocalSslProperty(configProperties);
-		String localAddress = prepareLocalHttpAddressProperty(configProperties);
-		String balancers = prepareProperty(configProperties, HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS);
-		String heartbeatingInterval = prepareProperty(configProperties,
-				HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL);
-		String lbHearbeatingServiceClassName = prepareProperty(configProperties,
-				HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME);
-
-		if (balancers != null && !balancers.isEmpty()) {
-
-			if (localAddress == null || localPort == null || lbHearbeatingServiceClassName == null) {
-				StringBuilder sb = new StringBuilder();
-
-				sb.append("Missing one or more required properties.\n");
-				sb.append("Required properties:\n");
-				sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS).append("\n");
-				sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT).append("\n");
-				sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME).append("\n");
-				sb.append("Missing properties:\n");
-				if (localAddress == null) {
-					sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS).append("\n");
-				}
-				if (localPort == null) {
-					sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT).append("\n");
-				}
-				if (lbHearbeatingServiceClassName == null) {
-					sb.append(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME).append("\n");
-				}
-				throw new InvalidConfigurationException(sb.toString());
-			}
-			properties = new Properties();
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS, balancers);
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, localPort);
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS, localAddress);
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME,
-					lbHearbeatingServiceClassName);
-			if (localSslPort != null) {
-				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, localSslPort);
-			}
-			if (heartbeatingInterval != null) {
-				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL,
-						heartbeatingInterval);
-			}
-
-		} else if (localAddress != null && localPort != null && lbHearbeatingServiceClassName != null) {
-			balancers = "";
-			properties = new Properties();
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.BALANCERS, balancers);
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT, localPort);
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS, localAddress);
-			properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LB_HB_SERVICE_CLASS_NAME,
-					lbHearbeatingServiceClassName);
-			if (localSslPort != null) {
-				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT, localSslPort);
-			}
-			if (heartbeatingInterval != null) {
-				properties.setProperty(HttpLoadBalancerHeartBeatingServiceImpl.HEARTBEAT_INTERVAL,
-						heartbeatingInterval);
-			}
-		}
-		return properties;
-	}
-
-	private String prepareLocalHttpPortProperty(ConfigProperties configProperties) {
-		ConfigProperties.Property localPortProperty = configProperties
-				.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_PORT);
-		String localHttpPort = null;
-		if (localPortProperty == null || localPortProperty.getValue() == null) {
-			localHttpPort = getJBossPort();
-		} else {
-			Integer intValue = (Integer) localPortProperty.getValue();
-			if (intValue > 1) {
-				localHttpPort = String.valueOf(localPortProperty.getValue());
-			}
-		}
-		return localHttpPort;
-	}
-
-	private String prepareLocalSslProperty(ConfigProperties configProperties) {
-		String propertyValue = null;
-		ConfigProperties.Property configProperty = configProperties
-				.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_SSL_PORT);
-		if (configProperty != null && configProperty.getValue() != null) {
-			Integer intValue = (Integer) configProperty.getValue();
-			if (intValue > 1) {
-				propertyValue = String.valueOf(intValue);
-			}
-		}
-		return propertyValue;
-	}
-
-	private String prepareProperty(ConfigProperties configProperties, String propertyName) {
-		String propertyValue = null;
-		ConfigProperties.Property configProperty = configProperties.getProperty(propertyName);
-		if (configProperty != null && configProperty.getValue() != null) {
-			propertyValue = String.valueOf(configProperty.getValue());
-		}
-		return propertyValue;
-	}
-
-	private String prepareLocalHttpAddressProperty(ConfigProperties configProperties) {
-		ConfigProperties.Property localAddressProperty = configProperties
-				.getProperty(HttpLoadBalancerHeartBeatingServiceImpl.LOCAL_HTTP_ADDRESS);
-		String localHttpAddress = null;
-		if (localAddressProperty == null || localAddressProperty.getValue() == null
-				|| ((String) localAddressProperty.getValue()).isEmpty()) {
-			localHttpAddress = getJBossAddress();
-		} else {
-			localHttpAddress = (String) localAddressProperty.getValue();
-		}
-		return localHttpAddress;
 	}
 
 	/*
@@ -762,13 +540,5 @@ public class HttpServletResourceAdaptor implements ResourceAdaptor, HttpServletR
 	 */
 	public void onSessionTerminated(HttpSessionWrapper httpSessionWrapper) {
 		endActivity(new HttpSessionActivityImpl(httpSessionWrapper));
-	}
-
-	private String getJBossAddress() {
-		return System.getProperty("jboss.bind.address");
-	}
-
-	private String getJBossPort() {
-		return System.getProperty("jboss.bind.port");
 	}
 }

@@ -10,13 +10,13 @@
 
 	<groupId>org.mobicents.servers.jainslee.http</groupId>
 	<artifactId>restcomm-slee-http</artifactId>
-	<version>7.0.0-SNAPSHOT</version>
+	<version>7.2.0-247</version>
 
 	<packaging>pom</packaging>
 
 	<properties>
 		<maven.du.plugin.version>4.0.2</maven.du.plugin.version>
-		<restcomm.jain.slee.version>7.1.82</restcomm.jain.slee.version>
+		<restcomm.jain.slee.version>7.2.0-246</restcomm.jain.slee.version>
 	</properties>
 
 	<modules>

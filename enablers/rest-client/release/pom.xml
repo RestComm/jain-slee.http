@@ -6,7 +6,7 @@
 	<parent>
 		<artifactId>restcomm-slee-enabler-rest-client</artifactId>
 		<groupId>org.mobicents.servers.jainslee.enablers</groupId>
-		<version>7.0.0-SNAPSHOT</version>
+		<version>7.2.0-269</version>
 	</parent>
 
 	<artifactId>restcomm-slee-enabler-rest-client-release</artifactId>
